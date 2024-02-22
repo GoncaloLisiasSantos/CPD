@@ -4,12 +4,12 @@ import numpy as np
 ## MULTIPLICATION
 
 def on_mult_line(m_ar, m_br):
-    pha = np.ones((m_ar, m_ar))
-    phb = np.array([[(i+1) for _ in range(m_br)] for i in range(m_br)])
+    matrix_a = np.ones((m_ar, m_ar))
+    matrix_b = np.array([[(i+1) for _ in range(m_br)] for i in range(m_br)])
 
     start_time = time.time()
 
-    phc = np.dot(pha, phb)
+    matrix_c = np.dot(matrix_a, matrix_b)
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -19,7 +19,7 @@ def on_mult_line(m_ar, m_br):
     print("Result matrix:")
     for i in range(min(1, m_ar)):
         for j in range(min(10, m_br)):
-            print(phc[i][j], end=" ")
+            print(matrix_c[i][j], end=" ")
         print()
 
 
@@ -27,11 +27,28 @@ def on_mult_line(m_ar, m_br):
         
 
 def main():
+    op = 1
+    while op != 0:
+        print("\nMenu:")
+        print("1. Multiplication")
+        print("2. Line Multiplication")
+        print("3. Block Multiplication")
+        print("4. Exit")
+        op = int(input("Selection?: "))
+        if op == 0:
+            break
+        if op == 1:
+            m_ar = int(input("Enter the number of rows: "))
+            m_arr = int(input("Enter the number of columns: "))
+            print(f"\nMatrix size: {m_ar}x{m_arr}")
+            on_mult_line(m_ar, m_ar)
+            break
+        if op ==4:
+            print("Exiting the program. Goodbye!")
+            exit()
+            
 
-    m_ar = int(input("Enter the number of rows: "))
-    m_arr = int(input("Enter the number of columns: "))
-    print(f"\nMatrix size: {m_ar}x{m_arr}")
-    on_mult_line(m_ar, m_ar)
+   
 
 if __name__ == "__main__":
     main()
