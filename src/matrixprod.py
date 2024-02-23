@@ -41,11 +41,11 @@ def line_mult(size):
     print(f"Time: {elapsed_time} seconds")
 
     # Display 10 elements of the result matrix to verify correctness
-    print("Result matrix:")
-    for i in range(min(1, size)):
-        for j in range(min(10, size)):
-            print(matrix_c[i][j], end=" ")
-        print()
+    #print("Result matrix:")
+    #for i in range(min(1, size)):
+    #    for j in range(min(10, size)):
+    #        print(matrix_c[i][j], end=" ")
+    #    print()
 
 ## BLOCK MULTIPLICATION
 def block_mult(size, block_size):
@@ -55,14 +55,13 @@ def block_mult(size, block_size):
 
     start_time = time.time()
 
-    for i0 in range (0, size, block_size):
-        for i1 in range (0, size, block_size):
-            for i2 in range (0, size, block_size):
-                for i in range (i0, i0+block_size):
-                    for j in range (i1, i1+block_size):
-                        for k in range (i2, i2+block_size):
-                            matrix_c[i][j] += matrix_a[i][k] * matrix_b[k][j]
-
+    for i0 in range(0, size, block_size):
+        for j0 in range(0, size, block_size):
+            for k0 in range(0, size, block_size):
+                for i in range(i0, min(i0 + block_size, size)):
+                    for j in range(j0, min(j0 + block_size, size)):
+                        for k in range(k0, min(k0 + block_size, size)):
+                            matrix_c[i, k] += matrix_a[i, j] * matrix_b[j, k]
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -74,7 +73,6 @@ def block_mult(size, block_size):
         for j in range(min(10, size)):
             print(matrix_c[i][j], end=" ")
         print()
-
 
 def main():
     option = 1
