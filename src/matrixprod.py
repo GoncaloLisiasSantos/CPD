@@ -3,9 +3,9 @@ import numpy as np
 
 ## MULTIPLICATION
 
-def on_mult_line(m_ar, m_br):
-    matrix_a = np.ones((m_ar, m_ar))
-    matrix_b = np.array([[(i+1) for _ in range(m_br)] for i in range(m_br)])
+def mult(size):
+    matrix_a = np.ones((size, size))
+    matrix_b = np.array([[(i+1) for _ in range(size)] for i in range(size)])
 
     start_time = time.time()
 
@@ -17,34 +17,68 @@ def on_mult_line(m_ar, m_br):
 
     # Display 10 elements of the result matrix to verify correctness
     print("Result matrix:")
-    for i in range(min(1, m_ar)):
-        for j in range(min(10, m_br)):
+    for i in range(min(1, size)):
+        for j in range(min(10, size)):
             print(matrix_c[i][j], end=" ")
         print()
 
 
 ## LINE MULTIPLICATION
-def OnMultLine(m_ar, m_br):
-    matrix_a = np.ones((m_ar, m_ar))
-    matrix_b = np.array([[(i+1) for _ in range(m_br)] for i in range(m_br)])
-    matrix_c = np.zeros((m_ar, m_ar))
+def line_mult(size):
+    matrix_a = np.ones((size, size))
+    matrix_b = np.array([[(i+1) for _ in range(size)] for i in range(size)])
+    matrix_c = np.zeros((size, size))
 
     start_time = time.time()
-    
-    for i in range(m_ar):
-        for k in range(m_br):
-            for j in range(m_ar):
-                matrix_c[i][j] += matrix_a[i][k]*matrix_b[k][j]
 
-    end = time.time()
+    for i in range(size):
+        for k in range(size):
+            for j in range(size):
+                matrix_c[i][j] += matrix_a[i][k] * matrix_b[k][j]
 
-    return "{:.5f}".format(end - start_time)
-        
-        
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time: {elapsed_time} seconds")
+
+    # Display 10 elements of the result matrix to verify correctness
+    print("Result matrix:")
+    for i in range(min(1, size)):
+        for j in range(min(10, size)):
+            print(matrix_c[i][j], end=" ")
+        print()
+
+## BLOCK MULTIPLICATION
+def block_mult(size, block_size):
+    matrix_a = np.ones((size, size))
+    matrix_b = np.array([[(i+1) for _ in range(size)] for i in range(size)])
+    matrix_c = np.zeros((size, size))
+
+    start_time = time.time()
+
+    for i0 in range (0, size, block_size):
+        for i1 in range (0, size, block_size):
+            for i2 in range (0, size, block_size):
+                for i in range (i0, i0+block_size):
+                    for j in range (i1, i1+block_size):
+                        for k in range (i2, i2+block_size):
+                            matrix_c[i][j] += matrix_a[i][k] * matrix_b[k][j]
+
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time: {elapsed_time} seconds")
+
+    # Display 10 elements of the result matrix to verify correctness
+    print("Result matrix:")
+    for i in range(min(1, size)):
+        for j in range(min(10, size)):
+            print(matrix_c[i][j], end=" ")
+        print()
+
 
 def main():
-    op = 1
-    while op != 0:
+    option = 1
+    while option != 0:
         print("\nMenu:")
         print("________________________\n")
         print("1| Multiplication      ")
@@ -52,21 +86,51 @@ def main():
         print("3| Block Multiplication")
         print("4| Exit                ")
         print("________________________\n")
-        op = int(input("Selection?: "))
-        if op == 0:
+        option = int(input("Selection?: "))
+
+        if option < 1 or option > 4:
+            print("Enter a valid input!")
+            main()
+
+        if option == 1:
+            size = int(input("Enter the number of rows/cols: "))
+            # m_arr = int(input("Enter the number of columns: "))
+            print(f"\nMatrix size: {size}x{size}")
+            mult(size)
+            '''
+            for size in range(600, 3400, 400):
+                print(f"\nMatrix size: {size}x{size}")
+                mult(size)
+            '''
             break
-        if op == 1:
-            m_ar = int(input("Enter the number of rows: "))
-            m_arr = int(input("Enter the number of columns: "))
-            print(f"\nMatrix size: {m_ar}x{m_arr}")
-            on_mult_line(m_ar, m_ar)
+
+        if option == 2:
+            size = int(input("Enter the number of rows/cols: "))
+            # m_arr = int(input("Enter the number of columns: "))
+            print(f"\nMatrix size: {size}x{size}")
+            line_mult(size)
+            '''
+            for size in range(600, 3400, 400):
+                print(f"\nMatrix size: {size}x{size}")
+                line_mult(size)
+            '''
             break
-        if op == 2:
-            m_r = int(input("Enter the number of rows: "))
-            print(f"\nMatrix size: {m_r}x{m_r}")
-            print("Time:", OnMultLine(m_r,m_r), "seconds")
+
+        if option == 3:
+            size = int(input("Enter the number of rows/cols: "))
+            block_size = int(input("Enter the size of each block: "))
+            # m_arr = int(input("Enter the number of columns: "))
+            print(f"\nMatrix size: {size}x{size}")
+            print(f"\nBlock size: {block_size}")
+            block_mult(size, block_size)
+            '''
+            for size in range(600, 3400, 400):
+                print(f"\nMatrix size: {size}x{size}")
+                print(f"\nBlock size: {block_size}")
+                block_mult(size, block_size)
+            '''
             break
-        if op ==4:
+        if option == 4:
             print("Exiting the program. Goodbye!")
             exit()
             
