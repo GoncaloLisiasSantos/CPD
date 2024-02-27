@@ -114,11 +114,11 @@ void OnMultLine(int m_ar, int m_br)
 	cout << st;
 
 	// display 10 elements of the result matrix tto verify correctness
-	cout << "Result matrix: " << endl;
+	/*cout << "Result matrix: " << endl;
 	for(i=0; i<1; i++)
 	{	for(j=0; j<min(10,m_br); j++)
 			cout << phc[j] << " ";
-	}
+	}*/
 	cout << endl;
 
     free(pha);
@@ -165,11 +165,11 @@ void OnMultBlock(int m_ar, int m_br, int bkSize)
     cout << st;
 
     // display 10 elements of the result matrix to verify correctness
-    cout << "Result matrix: " << endl;
+    /*cout << "Result matrix: " << endl;
     for(i=0; i<1; i++)
     {    for(j=0; j<min(10,m_br); j++)
             cout << phc[j] << " ";
-    }
+    }*/
     cout << endl;
 
     free(pha);
