@@ -344,6 +344,8 @@ int main (int argc, char *argv[])
 		cout << endl << "1. Multiplication" << endl;
 		cout << "2. Line Multiplication" << endl;
 		cout << "3. Block Multiplication" << endl;
+		cout << "4. OnParallel MultiLine1" << endl;
+		cout << "5. OnParallel MultiLine2" << endl;
 		cout << "Selection?: ";
 		cin >>op;
 		if (op == 0)
@@ -368,6 +370,15 @@ int main (int argc, char *argv[])
 				cout << "Block Size? ";
 				cin >> blockSize;
 				OnMultBlock(lin, col, blockSize);  
+				break;
+			case 4:
+				OnParallelMultLine1(lin, col); 
+				break;
+			case 5: 
+				OnParallelMultLine2(lin, col); 
+				break;
+			default:
+				cout << "Choose a valid option.\n";
 				break;
 
 		}
