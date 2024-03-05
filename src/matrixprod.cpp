@@ -4,6 +4,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <papi.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -204,8 +205,13 @@ void OnParallelMultLine1(int m_ar, int m_br)
         for(j=0; j<m_br; j++)
             phc[i*m_br + j] = (double)0.0;
 
-    Time1 = clock();
+    double start = omp_get_wtime();
 
+	// This directive creates a set of threads, in which each thread is 
+	// responsible for executing a block of code in parallel.
+	// Thus, we can save some time when executing the program
+
+	// In general, the approach used in OnParallelMultLine1 might be faster because it involves fewer overheads
     #pragma omp parallel for
     for (int i=0; i<m_ar; i++) {
         for (int k=0; k<m_ar; k++) {
@@ -215,8 +221,8 @@ void OnParallelMultLine1(int m_ar, int m_br)
         }
     }
 
-    Time2 = clock();
-    sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+    double end = omp_get_wtime();
+    sprintf(st, "Time: %3.3f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     cout << st;
 
     // display 10 elements of the result matrix tto verify correctness
@@ -260,11 +266,13 @@ void OnParallelMultLine2(int m_ar, int m_br)
         for(j=0; j<m_br; j++)
             phc[i*m_br + j] = (double)0.0;
 
-    Time1 = clock();
+	double start = omp_get_wtime();
 
     #pragma omp parallel
     for (int i=0; i<m_ar; i++) {
         for (int k=0; k<m_ar; k++) {
+			// This directive distributes the loop iterations of the inner loop  
+			// across the threads created with the previous directive
             #pragma omp for
             for (int j=0; j<m_ar; j++) {
                 phc[i*m_ar+j] += pha[i*m_ar+k] * phb[k*m_br+j];
@@ -272,8 +280,8 @@ void OnParallelMultLine2(int m_ar, int m_br)
         }
     }
 
-    Time2 = clock();
-    sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+    double end = omp_get_wtime();
+    sprintf(st, "Time: %3.3f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
     cout << st;
 
     // display 10 elements of the result matrix tto verify correctness
