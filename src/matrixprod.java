@@ -162,27 +162,42 @@ public class MatrixMultiplication {
 
             switch (option) {
                 case 1:
-                    System.out.print("Enter the number of rows/cols: ");
-                    int size = scanner.nextInt();
-                    System.out.println("\nMatrix size: " + size + "x" + size);
-                    mult(size);
+                    // System.out.print("Enter the number of rows/cols: ");
+                    // int size = scanner.nextInt();
+                    // System.out.println("\nMatrix size: " + size + "x" + size);
+                    for (int i = 600; i < 3001; i += 400) {
+                        System.out.println("\nMatrix size: " + i + "x" + i);
+                        mult(i);
+                    }                    
                     break;
                 case 2:
-                    System.out.print("Enter the number of rows/cols: ");
-                    size = scanner.nextInt();
-                    System.out.println("\nMatrix size: " + size + "x" + size);
-                    lineMult(size);
+                    // System.out.print("Enter the number of rows/cols: ");
+                    // size = scanner.nextInt();
+                    // System.out.println("\nMatrix size: " + size + "x" + size);
+                    for (int i = 600; i < 3001; i += 400) {
+                        System.out.println("\nMatrix size: " + i + "x" + i);
+                        lineMult(size);
+                    }
                     break;
+                // case 3:
+                    // System.out.print("Enter the number of rows/cols: ");
+                    // int size = scanner.nextInt();
+                    // System.out.print("Enter the size of each block: ");
+                    // int blockSize = scanner.nextInt();
+                    // System.out.println("\nMatrix size: " + size + "x" + size);
+                    // System.out.println("\nBlock size: " + blockSize);
+                    // int blockSize = 128;
+                    // for (int j = 0; j < 3; j++) {
+                    //     for (int i = 4096; i < 10241; i += 2048) {
+                    //         System.out.println("Matrix size: " + i + "x" + i);
+                    //         System.out.println("Block size: " + blockSize);
+                    //         blockMult(i, blockSize);
+                    //     }
+                    //     blockSize = blockSize * 2;
+                    // }                    
+                    // blockMult(size, blockSize);
+                    // break;
                 case 3:
-                    System.out.print("Enter the number of rows/cols: ");
-                    size = scanner.nextInt();
-                    System.out.print("Enter the size of each block: ");
-                    int blockSize = scanner.nextInt();
-                    System.out.println("\nMatrix size: " + size + "x" + size);
-                    System.out.println("\nBlock size: " + blockSize);
-                    blockMult(size, blockSize);
-                    break;
-                case 4:
                     System.out.println("Exiting the program. Goodbye!");
                     System.exit(0);
                 default:

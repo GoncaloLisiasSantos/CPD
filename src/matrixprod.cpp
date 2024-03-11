@@ -260,7 +260,6 @@ int main (int argc, char *argv[])
                     cout << "Matrix size: " << i << "x" << i << endl;
                     OnMultLine(i, i);
                 }
-                
                 break;
             case 3:
                 int blockSize = 128;
@@ -268,11 +267,10 @@ int main (int argc, char *argv[])
                     for (int i = 4096; i < 10241; i+=2048) {
                         cout << "Matrix size: " << i << "x" << i << " Block size: " << blockSize << endl;
                         OnMultBlock(i, i, blockSize);
-                        blockSize = blockSize * 2;
                     }
+                    blockSize = blockSize * 2;
                 }
                 break;
-
         }
 
         ret = PAPI_stop(EventSet, values);
