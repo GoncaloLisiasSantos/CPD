@@ -128,13 +128,13 @@ void OnMultLine(int m_ar, int m_br)
 }
 
 // add code here for block x block matriz multiplication
-void OnMultBlock(int m_ar, int m_br, int bkSize)
+void OnMultBlock(int m_ar, int m_br, int blockSize)
 {
     SYSTEMTIME Time1, Time2;
     
     char st[100];
     //double temp;
-    int i, j, k, i0, j0, k0;
+    int i, j, k, l, m, n;
 
     double *pha, *phb, *phc;
 
@@ -142,9 +142,21 @@ void OnMultBlock(int m_ar, int m_br, int bkSize)
     phb = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phc = (double *)malloc((m_ar * m_ar) * sizeof(double));
 
+    for(i=0; i<m_ar; i++)
+        for(j=0; j<m_ar; j++)
+            pha[i*m_ar + j] = (double)1.0;
+
+    for(i=0; i<m_br; i++)
+        for(j=0; j<m_br; j++)
+            phb[i*m_br + j] = (double)(i+1);
+    
+    for(i=0; i<m_br; i++)
+        for(j=0; j<m_br; j++)
+            phc[i*m_br + j] = (double)0.0;
+
     Time1 = clock();
 
-
+    /*
     for (int i0=0; i<m_ar;i+=bkSize){
         for(int j0=0;j<m_br;j+=bkSize){
             for(int k0=0; k<m_ar;k+=bkSize){
@@ -159,6 +171,26 @@ void OnMultBlock(int m_ar, int m_br, int bkSize)
             }               
         }
 
+    }
+    */
+    for(i=0; i<m_ar; i += blockSize)
+    {
+        for(j=0; j<m_br; j += blockSize)
+        {
+            for(k=0; k<m_ar; k += blockSize)
+            {
+                for(l = i; l<min(i + blockSize, m_ar); l++)
+                {
+                    for(m = k; m<min(k + blockSize, m_br); m++)
+                    {
+                        for (n = j; n<min(j + blockSize, m_ar); n++)
+                        {
+                            phc[m_ar*l + n] += pha[m_ar*l + m] * phb[m_ar*m + n];
+                        }
+                    }
+                }
+            }
+        }
     }
     Time2 = clock();
     sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
@@ -238,49 +270,96 @@ int main (int argc, char *argv[])
         if (op == 0)
             break;
 
-        // Start counting
-        ret = PAPI_start(EventSet);
-        if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
-
         switch (op){
             case 1: 
                 for (int i = 600; i < 3400; i+=400) {
+
                     cout << "Matrix size: " << i << "x" << i << endl;
+
+                    // Start counting
+                    ret = PAPI_start(EventSet);
+                    if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
+
                     OnMult(i, i);
+
+                    ret = PAPI_stop(EventSet, values);
+                    if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
+                    printf("L1 DCM: %lld \n",values[0]);
+                    printf("L2 DCM: %lld \n",values[1]);
+
+                    ret = PAPI_reset( EventSet );
+                    if ( ret != PAPI_OK )
+                        std::cout << "FAIL reset" << endl; 
                 }
                 break;
             case 2:
                 /*
                 for (int i = 600; i < 3400; i+=400) {
-                    cout << "Matrix size: " << i << "x" << i << endl;
+                    cout << "\nMatrix size: " << i << "x" << i << endl;
+
+                    // Start counting
+                    ret = PAPI_start(EventSet);
+                    if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
+
                     OnMultLine(i, i);
+
+                    ret = PAPI_stop(EventSet, values);
+                    if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
+                    printf("L1 DCM: %lld \n",values[0]);
+                    printf("L2 DCM: %lld \n",values[1]);
+
+                    ret = PAPI_reset( EventSet );
+                    if ( ret != PAPI_OK )
+                        std::cout << "FAIL reset" << endl;
                 }
+                
                 */
                 for (int i = 4096; i < 10241; i+=2048) {
+
                     cout << "Matrix size: " << i << "x" << i << endl;
+
+                    // Start counting
+                    ret = PAPI_start(EventSet);
+                    if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
+
                     OnMultLine(i, i);
+
+                    ret = PAPI_stop(EventSet, values);
+                    if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
+                    printf("L1 DCM: %lld \n",values[0]);
+                    printf("L2 DCM: %lld \n",values[1]);
+
+                    ret = PAPI_reset( EventSet );
+                    if ( ret != PAPI_OK )
+                        std::cout << "FAIL reset" << endl;
                 }
+                
                 break;
             case 3:
                 int blockSize = 128;
-                for (int j = 0; j < 3; j++) {
+                //for (int j = 0; j < 3; j++) {
                     for (int i = 4096; i < 10241; i+=2048) {
-                        cout << "Matrix size: " << i << "x" << i << " Block size: " << blockSize << endl;
-                        OnMultBlock(i, i, blockSize);
+                        cout << "Matrix size: " << i << "x" << i << " Block size: " << 128 << endl;
+
+                        // Start counting
+                        ret = PAPI_start(EventSet);
+                        if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
+
+                        OnMultBlock(i, i, 128);
+
+                        ret = PAPI_stop(EventSet, values);
+                        if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
+                        printf("L1 DCM: %lld \n",values[0]);
+                        printf("L2 DCM: %lld \n",values[1]);
+
+                        ret = PAPI_reset( EventSet );
+                        if ( ret != PAPI_OK )
+                            std::cout << "FAIL reset" << endl;
                     }
-                    blockSize = blockSize * 2;
-                }
+                    //blockSize = blockSize * 2;
+                //}
                 break;
         }
-
-        ret = PAPI_stop(EventSet, values);
-        if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
-        printf("L1 DCM: %lld \n",values[0]);
-        printf("L2 DCM: %lld \n",values[1]);
-
-        ret = PAPI_reset( EventSet );
-        if ( ret != PAPI_OK )
-            std::cout << "FAIL reset" << endl; 
 
 
 
