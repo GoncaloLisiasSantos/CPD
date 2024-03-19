@@ -4,6 +4,7 @@
 #include <time.h>
 #include <cstdlib>
 #include <papi.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -41,6 +42,8 @@ void OnMult(int m_ar, int m_br)
 
     Time1 = clock();
 
+    // we add the intermediate values of the dot product 
+    // to the 'temp' variable (which works as an accumulator)
     for(i=0; i<m_ar; i++)
     {   for( j=0; j<m_br; j++)
         {   temp = 0;
@@ -101,6 +104,9 @@ void OnMultLine(int m_ar, int m_br)
 
     Time1 = clock();
 
+    // same as previous one, but with a slight difference
+    // but here we store the dot produt value directly in the matrix
+    // (instead of firstly keeping the intermediate values in an auxiliar variable)
     for (i = 0; i<m_ar;i++){
         for(k=0;k<m_ar;k++){
             for (j=0;j<m_br;j++){
@@ -173,6 +179,14 @@ void OnMultBlock(int m_ar, int m_br, int blockSize)
 
     }
     */
+
+    // these nested loops implement block-wise matrix multiplication, 
+    // where each block of the resulting matrix ⁠ phc⁠ is computed by 
+    // performing smaller block-wise multiplications of corresponding 
+    // blocks of matrices⁠ pha⁠ and⁠ phb
+    // ex: result matrix 9x9
+    // first block (3x3) composed by rows 1 to 3 and cols 1 to 3 correspond to the 
+    // 3x3 matrix multiplication of the same rows and cols of matrices pha and phb
     for(i=0; i<m_ar; i += blockSize)
     {
         for(j=0; j<m_br; j += blockSize)
@@ -209,7 +223,123 @@ void OnMultBlock(int m_ar, int m_br, int blockSize)
     free(phc);
 }
 
+// add code here for line x parallel line matriz multiplication
+void OnParallelMultLine1(int m_ar, int m_br)
+{    
+    char st[100];
+    //double temp;
+    int i, j, k;
 
+    double *pha, *phb, *phc;
+
+    pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    phb = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    phc = (double *)malloc((m_ar * m_ar) * sizeof(double));
+
+    for(i=0; i<m_ar; i++)
+        for(j=0; j<m_ar; j++)
+            pha[i*m_ar + j] = (double)1.0;
+
+    for(i=0; i<m_br; i++)
+        for(j=0; j<m_br; j++)
+            phb[i*m_br + j] = (double)(i+1);
+    
+    for(i=0; i<m_br; i++)
+        for(j=0; j<m_br; j++)
+            phc[i*m_br + j] = (double)0.0;
+
+    double start = omp_get_wtime();
+
+    // This directive creates a set of threads, in which each thread is 
+    // responsible for executing a block of code in parallel.
+    // Thus, we can save some time when executing the program
+
+    // In general, the approach used in OnParallelMultLine1 might be faster because it involves fewer overheads
+    #pragma omp parallel for
+    for (int i=0; i<m_ar; i++) {
+        for (int k=0; k<m_ar; k++) {
+            for (int j=0; j<m_ar; j++) {
+                phc[i*m_ar+j] += pha[i*m_ar+k] * phb[k*m_br+j];
+            }
+        }
+    }
+
+    double end = omp_get_wtime();
+    sprintf(st, "Time: %3.3f seconds\n", (double)(end - start));
+    cout << st;
+
+    // display 10 elements of the result matrix tto verify correctness
+    cout << "Result matrix: " << endl;
+    for(i=0; i<1; i++)
+    {   for(j=0; j<min(10,m_br); j++)
+            cout << phc[j] << " ";
+    }
+    cout << endl;
+
+    free(pha);
+    free(phb);
+    free(phc);
+ 
+}
+
+// add code here for line x parallel line matriz multiplication
+void OnParallelMultLine2(int m_ar, int m_br)
+{
+    SYSTEMTIME Time1, Time2;
+    
+    char st[100];
+    //double temp;
+    int i, j, k;
+
+    double *pha, *phb, *phc;
+
+    pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    phb = (double *)malloc((m_ar * m_ar) * sizeof(double));
+    phc = (double *)malloc((m_ar * m_ar) * sizeof(double));
+
+    for(i=0; i<m_ar; i++)
+        for(j=0; j<m_ar; j++)
+            pha[i*m_ar + j] = (double)1.0;
+
+    for(i=0; i<m_br; i++)
+        for(j=0; j<m_br; j++)
+            phb[i*m_br + j] = (double)(i+1);
+    
+    for(i=0; i<m_br; i++)
+        for(j=0; j<m_br; j++)
+            phc[i*m_br + j] = (double)0.0;
+
+    double start = omp_get_wtime();
+
+    #pragma omp parallel
+    for (int i=0; i<m_ar; i++) {
+        for (int k=0; k<m_ar; k++) {
+            // This directive distributes the loop iterations of the inner loop  
+            // across the threads created with the previous directive
+            #pragma omp for
+            for (int j=0; j<m_ar; j++) {
+                phc[i*m_ar+j] += pha[i*m_ar+k] * phb[k*m_br+j];
+            }
+        }
+    }
+
+    double end = omp_get_wtime();
+    sprintf(st, "Time: %3.3f seconds\n", (double)(end - start));
+    cout << st;
+
+    // display 10 elements of the result matrix tto verify correctness
+    cout << "Result matrix: " << endl;
+    for(i=0; i<1; i++)
+    {   for(j=0; j<min(10,m_br); j++)
+            cout << phc[j] << " ";
+    }
+    cout << endl;
+
+    free(pha);
+    free(phb);
+    free(phc);
+ 
+}
 
 void handle_error (int retval)
 {
@@ -265,6 +395,8 @@ int main (int argc, char *argv[])
         cout << endl << "1. Multiplication" << endl;
         cout << "2. Line Multiplication" << endl;
         cout << "3. Block Multiplication" << endl;
+        cout << "4. OnParallel MultiLine1" << endl;
+        cout << "5. OnParallel MultiLine2" << endl;
         cout << "Selection?: ";
         cin >>op;
         if (op == 0)
@@ -336,7 +468,6 @@ int main (int argc, char *argv[])
                 
                 break;
             case 3:
-                int blockSize = 128;
                 //for (int j = 0; j < 3; j++) {
                     for (int i = 4096; i < 10241; i+=2048) {
                         cout << "Matrix size: " << i << "x" << i << " Block size: " << 128 << endl;
@@ -358,6 +489,51 @@ int main (int argc, char *argv[])
                     }
                     //blockSize = blockSize * 2;
                 //}
+                break;
+            case 4:
+                for (int i = 600; i < 3400; i+=400) {
+
+                    cout << "Matrix size: " << i << "x" << i << endl;
+
+                    // Start counting
+                    ret = PAPI_start(EventSet);
+                    if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
+
+                    OnParallelMultLine1(i, i);
+
+                    ret = PAPI_stop(EventSet, values);
+                    if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
+                    printf("L1 DCM: %lld \n",values[0]);
+                    printf("L2 DCM: %lld \n",values[1]);
+
+                    ret = PAPI_reset( EventSet );
+                    if ( ret != PAPI_OK )
+                        std::cout << "FAIL reset" << endl; 
+                }
+                break;
+            case 5: 
+                for (int i = 600; i < 3400; i+=400) {
+
+                    cout << "Matrix size: " << i << "x" << i << endl;
+
+                    // Start counting
+                    ret = PAPI_start(EventSet);
+                    if (ret != PAPI_OK) cout << "ERROR: Start PAPI" << endl;
+
+                    OnParallelMultLine2(i, i);
+
+                    ret = PAPI_stop(EventSet, values);
+                    if (ret != PAPI_OK) cout << "ERROR: Stop PAPI" << endl;
+                    printf("L1 DCM: %lld \n",values[0]);
+                    printf("L2 DCM: %lld \n",values[1]);
+
+                    ret = PAPI_reset( EventSet );
+                    if ( ret != PAPI_OK )
+                        std::cout << "FAIL reset" << endl; 
+                } 
+                break;
+            default:
+                cout << "Choose a valid option.\n";
                 break;
         }
 
