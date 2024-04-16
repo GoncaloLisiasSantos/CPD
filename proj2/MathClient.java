@@ -28,9 +28,12 @@ public class MathClient {
                 PrintWriter writer = new PrintWriter(output, true);
                 writer.println(userGuess);
 
-                // Receive and display server's response
+                // Check if the server announces a winner
                 String response = reader.readLine();
-                System.out.println(response);
+                if (response != null && response.startsWith("Player")) {
+                    System.out.println(response);
+                    break; // End the game
+                }
             }
 
         } catch (UnknownHostException ex) {

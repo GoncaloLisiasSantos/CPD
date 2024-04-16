@@ -8,6 +8,7 @@ public class MathServer {
     private static List<Socket> clients = new ArrayList<>();
     private static String currentExpression;
     private static int currentResult;
+    private static boolean gameRunning = false;
 
     public static void main(String[] args) {
         if (args.length < 1) return;
@@ -25,11 +26,12 @@ public class MathServer {
                 Thread thread = new Thread(new ClientHandler(socket));
                 thread.start();
 
-                // Generate a new random expression if this is the first client
-                if (clients.size() == 1) {
+                // Generate a new random expression if the game is not running
+                if (!gameRunning) {
                     currentExpression = generateRandomExpression();
                     currentResult = evaluateExpression(currentExpression);
                     System.out.println("New expression generated: " + currentExpression);
+                    gameRunning = true;
                 }
 
                 // Broadcast the current expression to all connected clients
@@ -101,7 +103,7 @@ public class MathServer {
                 InputStream input = socket.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 
-                while (true) {
+                while (gameRunning) {
                     // Wait for client's guess
                     String clientGuess = reader.readLine();
                     int guess = Integer.parseInt(clientGuess);
@@ -109,7 +111,7 @@ public class MathServer {
                     // Compare client's guess with the current result
                     if (guess == currentResult) {
                         broadcast("Player " + socket.getPort() + " wins!");
-                        break; // End the game
+                        gameRunning = false; // End the game
                     }
                 }
             } catch (IOException ex) {
