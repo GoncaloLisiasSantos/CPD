@@ -10,45 +10,33 @@ public class MathClient {
         int port = Integer.parseInt(args[1]);
 
         try (Socket socket = new Socket(hostname, port)) {
-
             InputStream input = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 
-            String expression = reader.readLine();
-            System.out.println("Received expression from server: " + expression);
+            while (true) {
+                // Receive and display the arithmetic expression from server
+                String expression = reader.readLine();
+                System.out.println("Received expression from server: " + expression);
 
-            // Evaluate the received arithmetic expression
-            int result = evaluateExpression(expression);
-            System.out.println("Result of expression: " + result);
+                // Prompt user to enter their guess
+                System.out.print("Enter your guess for the result of the expression: ");
+                BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
+                String userGuess = userInputReader.readLine();
+
+                // Send user's guess to server
+                OutputStream output = socket.getOutputStream();
+                PrintWriter writer = new PrintWriter(output, true);
+                writer.println(userGuess);
+
+                // Receive and display server's response
+                String response = reader.readLine();
+                System.out.println(response);
+            }
 
         } catch (UnknownHostException ex) {
             System.out.println("Server not found: " + ex.getMessage());
         } catch (IOException ex) {
             System.out.println("I/O error: " + ex.getMessage());
         }
-    }
-
-    private static int evaluateExpression(String expression) {
-        String[] parts = expression.split(" ");
-        int num1 = Integer.parseInt(parts[0]);
-        String operator = parts[1];
-        int num2 = Integer.parseInt(parts[2]);
-
-        int result = 0;
-        switch (operator) {
-            case "+":
-                result = num1 + num2;
-                break;
-            case "-":
-                result = num1 - num2;
-                break;
-            case "*":
-                result = num1 * num2;
-                break;
-            case "/":
-                result = num1 / num2;
-                break;
-        }
-        return result;
     }
 }
