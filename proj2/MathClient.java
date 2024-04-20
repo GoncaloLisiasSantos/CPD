@@ -4,7 +4,10 @@ import java.net.*;
 public class MathClient {
 
     public static void main(String[] args) {
-        if (args.length < 2) return;
+        if (args.length < 2) {
+            System.out.println("Usage: java MathClient <hostname> <port>");
+            return;
+        }
 
         String hostname = args[0];
         int port = Integer.parseInt(args[1]);
@@ -12,27 +15,37 @@ public class MathClient {
         try (Socket socket = new Socket(hostname, port)) {
             InputStream input = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+            System.out.println("Connected to the server. Ready to answer questions!");
+
+            boolean gameOver = false;
 
             while (true) {
-                // Receive and display the arithmetic expression from server
-                String expression = reader.readLine();
-                System.out.println("Received expression from server: " + expression);
+                String serverMessage = reader.readLine();
+                if (serverMessage == null) {
+                    break; // Server has closed the connection
+                }
+                
+                System.out.println(serverMessage);
 
-                // Prompt user to enter their guess
-                System.out.print("Enter your guess for the result of the expression: ");
-                BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
-                String userGuess = userInputReader.readLine();
+                // If the "Game Over" message is detected, we set a flag but don't break the loop
+                if (serverMessage.startsWith("Game Over")) {
+                    gameOver = true;
+                    continue; 
+                }
 
-                // Send user's guess to server
-                OutputStream output = socket.getOutputStream();
-                PrintWriter writer = new PrintWriter(output, true);
-                writer.println(userGuess);
+                // After the "Game Over" message, if a new line is read that doesn't start with "Player", we assume scores are done
+                if (gameOver && !serverMessage.startsWith("Player")) {
+                    break; // All scores have been received
+                }
 
-                // Check if the server announces a winner
-                String response = reader.readLine();
-                if (response != null && response.startsWith("Player")) {
-                    System.out.println(response);
-                    break; // End the game
+                // If the game is not over, continue to read guesses from the user
+                if (!gameOver) {
+                    System.out.print("Enter your guess for the result of the expression: ");
+                    BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
+                    String userGuess = userInputReader.readLine();
+                    writer.println(userGuess); // Send user's guess to the server
                 }
             }
 
