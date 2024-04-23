@@ -2,14 +2,14 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap; 
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MathServer {
     private static List<Socket> clients = Collections.synchronizedList(new ArrayList<>());
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
-    private static AtomicInteger currentIndex = new AtomicInteger(0);
     private static Map<Socket, Integer> scores = new ConcurrentHashMap<>();
+    private static Map<Socket, Boolean> hasAnswered = new ConcurrentHashMap<>();
+
 
     public static void main(String[] args) {
         if (args.length < 1) return;
@@ -33,10 +33,7 @@ public class MathServer {
                 Thread thread = new Thread(new ClientHandler(socket));
                 thread.start();
 
-                // Broadcast the current expression to all connected clients if this is the first client
-                if (clients.size() == 1) {
-                    broadcast(currentIndex + ": " + expressions.get(currentIndex.get()));
-                }
+                
             }
 
         } catch (IOException ex) {
@@ -69,28 +66,31 @@ public class MathServer {
     }
 
     private static int evaluateExpression(String expression) {
-        String[] parts = expression.split(" ");
-        int num1 = Integer.parseInt(parts[0]);
-        String operator1 = parts[1];
-        int num2 = Integer.parseInt(parts[2]);
+    String[] parts = expression.split(" ");
+    int result = Integer.parseInt(parts[0]);
 
-        int result = 0;
-        switch (operator1) {
+    for (int i = 1; i < parts.length; i += 2) {
+        String operator = parts[i];
+        int nextOperand = Integer.parseInt(parts[i + 1]);
+
+        switch (operator) {
             case "+":
-                result = num1 + num2;
+                result += nextOperand;
                 break;
             case "-":
-                result = num1 - num2;
+                result -= nextOperand;
                 break;
             case "*":
-                result = num1 * num2;
+                result *= nextOperand;
                 break;
             case "/":
-                result = num1 / num2;
+                result /= nextOperand;
                 break;
         }
-        return result;
     }
+    return result;
+}
+
 
     private static void broadcast(String message) {
         synchronized (clients) {
@@ -109,18 +109,9 @@ public class MathServer {
         }
     }
 
-    private static void checkAndEndGame() {
-        if (currentIndex.get() >= 10) {
-            broadcast("Game Over! Scores: " );
-            for (Map.Entry<Socket, Integer> entry : scores.entrySet()) {
-                broadcast("Player " + entry.getKey().getPort() + ": " + entry.getValue() + " points");
-            }
-            resetGame();
-        }
-    }
 
     private static void resetGame() {
-        currentIndex.set(0);
+        //currentIndex.set(0);
         expressions.clear();
         results.clear();
         scores.clear();
@@ -129,6 +120,7 @@ public class MathServer {
 
     private static class ClientHandler implements Runnable {
         private Socket socket;
+        private int currentQuestionIndex = 0; // Novo índice para cada cliente
 
         public ClientHandler(Socket socket) {
             this.socket = socket;
@@ -137,35 +129,44 @@ public class MathServer {
         @Override
         public void run() {
             try {
+                OutputStream output = socket.getOutputStream();
+                PrintWriter writer = new PrintWriter(output, true);
                 InputStream input = socket.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 
-                while (true) {
+                // Enviar todas as perguntas imediatamente após a conexão
+                for (String expr : expressions) {
+                    writer.println(expr);
+                }
+
+                // Loop para lidar com as respostas
+                while (currentQuestionIndex < expressions.size()) {
                     String clientGuess = reader.readLine();
-                    if (clientGuess == null) break; // Handle client disconnection
+                    if (clientGuess == null) break; // Tratar desconexão
 
                     int guess = Integer.parseInt(clientGuess);
+                    int correctAnswer = results.get(currentQuestionIndex);
 
-                    if (currentIndex.get() < 10 && guess == results.get(currentIndex.get())) {
-                        scores.put(socket, scores.get(socket) + 2); // Increment score by 2 points for correct answer
+                    if (guess == correctAnswer) {
+                        scores.put(socket, scores.get(socket) + 2); // Incrementar pontuação
                     }
 
-                    if (currentIndex.incrementAndGet() < 10) {
-                        broadcast(currentIndex + ": " + expressions.get(currentIndex.get()));
-                    } else {
-                        checkAndEndGame();
-                        break;
-                    }
+                    currentQuestionIndex++; // Incrementar índice para este cliente
                 }
+
+                // Enviar pontuação final para o cliente
+                writer.println("Game Over! Your score: " + scores.get(socket));
+
             } catch (IOException ex) {
                 System.out.println("Error handling client input: " + ex.getMessage());
             } finally {
                 try {
-                    socket.close(); // Ensure the socket is closed on termination
+                    socket.close(); // Fechar o socket ao terminar
                 } catch (IOException e) {
                     System.out.println("Error closing client socket: " + e.getMessage());
                 }
             }
         }
     }
+
 }
