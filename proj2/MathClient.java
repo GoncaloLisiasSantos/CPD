@@ -11,48 +11,58 @@ public class MathClient {
 
         String hostname = args[0];
         int port = Integer.parseInt(args[1]);
+        BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
 
-        try (Socket socket = new Socket(hostname, port)) {
-            InputStream input = socket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+        while (true) {
+            System.out.println("\nMenu:");
+            System.out.println("1. Play");
+            System.out.println("2. Exit");
+            System.out.print("Enter your choice: ");
+
+            try {
+                String choice = userInputReader.readLine();
+                if ("2".equals(choice)) {
+                    System.out.println("Exiting client.");
+                    break;
+                } else if ("1".equals(choice)) {
+                    connectToServer(hostname, port, userInputReader);
+                } else {
+                    System.out.println("Invalid option. Please try again.");
+                }
+            } catch (IOException e) {
+                System.out.println("Error reading input from user: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void connectToServer(String hostname, int port, BufferedReader userInputReader) {
+        try (Socket socket = new Socket(hostname, port);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
 
             System.out.println("Connected to the server. Ready to answer questions!");
 
-            boolean gameOver = false;
-
-            while (true) {
-                String serverMessage = reader.readLine();
-                if (serverMessage == null) {
-                    break; // Server has closed the connection
+            String fromServer;
+            while ((fromServer = reader.readLine()) != null) {
+                if ("END_OF_QUESTIONS".equals(fromServer)) {
+                    break;
                 }
-                
-                System.out.println(serverMessage);
+                System.out.println(fromServer);
 
-                // If the "Game Over" message is detected, we set a flag but don't break the loop
-                if (serverMessage.startsWith("Game Over")) {
-                    gameOver = true;
-                    continue; 
-                }
-
-                // After the "Game Over" message, if a new line is read that doesn't start with "Player", we assume scores are done
-                if (gameOver && !serverMessage.startsWith("Player")) {
-                    break; // All scores have been received
-                }
-
-                // If the game is not over, continue to read guesses from the user
-                if (!gameOver) {
-                    System.out.print("Enter your guess for the result of the expression: ");
-                    BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
-                    String userGuess = userInputReader.readLine();
-                    writer.println(userGuess); // Send user's guess to the server
-                }
+                System.out.print("Your answer: ");
+                String userResponse = userInputReader.readLine();
+                writer.println(userResponse);
             }
 
-        } catch (UnknownHostException ex) {
-            System.out.println("Server not found: " + ex.getMessage());
-        } catch (IOException ex) {
-            System.out.println("I/O error: " + ex.getMessage());
+            // Receive final score
+            System.out.println(reader.readLine());
+
+        } catch (UnknownHostException e) {
+            System.out.println("Don't know about host " + hostname);
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("Couldn't get I/O for the connection to " + hostname);
+            e.printStackTrace();
         }
     }
 }
