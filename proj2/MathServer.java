@@ -47,13 +47,18 @@ public class MathServer {
 
                 handleClientConnection(socket);
 
+                // TODO: nsei se é aqui que temos de verificar se ele perde a ligaçao
                 // check if client lost connection
                 if (!isConnected(socket)) {
+                    // send message to the client warning about the connection being lost
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                    out.println("Connection lost");
+
                     // reconnect client
                     reconnectClient(socket);
                     // mark the client as disconnected
                     // ...
-                } 
+                }
             }
         } catch (IOException e) {
             System.out.println("Could not listen on port: " + port);
@@ -129,8 +134,26 @@ public class MathServer {
         return !socket.isClosed();
     }
 
-    // private static void reconnectClient(Socket socket) {
-        // compare client's token to the clientsMap 
+    private static void reconnectClient(Socket socket) {
+        // compare client's token to the clientsMap
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+
+            String tokenStr = reader.readLine();
+
+            for (UUID token : clientsMap.keySet()) {
+                User user = clientsMap.get(token);
+                // client was already connected to the server
+                if (tokenStr == token.toString() && waitingQueue.contains(user)) {
+                    writer.println("Reconnecting...");
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("Exception caught when trying to reestablish connection");
+            System.out.println(e.getMessage());
+        }
     }
 
     private static class ClientHandler implements Runnable {
