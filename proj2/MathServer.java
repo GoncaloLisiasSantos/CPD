@@ -1,98 +1,64 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-
+import java.util.concurrent.locks.*;
 
 public class MathServer {
-    private static List<Socket> clients = Collections.synchronizedList(new ArrayList<>());
-    private static Map<Socket, Integer> scores = new ConcurrentHashMap<>();
     private static ServerSocket serverSocket;
-    private static volatile boolean serverRunning = false;
+    private static List<Socket> clients = new ArrayList<>();
+    private static Lock clientsLock = new ReentrantLock(); // Lock for managing clients list
     private static List<String> expressions = new ArrayList<>();
+    private static List<Integer> results = new ArrayList<>();
+    private static Queue<User> waitingQueue = new LinkedList<>(); // clients waiting in the queue to connect to the
+    private static Map<UUID, User> clientsMap = new HashMap<>(); // just to have something that links tokens to clients
 
     public static void main(String[] args) {
-        if (args.length < 1) return;
-
-        int port = Integer.parseInt(args[0]);
-        Scanner scanner = new Scanner(System.in);
-        boolean exit = false;
-
-        // Prepare the server thread but do not start it immediately
-        Thread serverThread = prepareServerThread(port);
-
-        // Menu loop
-        while (!exit) {
-            System.out.println("1. Play");
-            System.out.println("2. Display High Scores");
-            System.out.println("3. Exit");
-
-            System.out.print("Enter choice: ");
-            int choice = scanner.nextInt();
-
-            switch (choice) {
-                case 1:
-                    if (!serverRunning && !serverThread.isAlive()) {
-                        serverThread = prepareServerThread(port); // Prepare a new thread if the old one has finished running
-                        serverThread.start();
-                    } else {
-                        System.out.println("Server already running.");
-                    }
-                    break;
-                case 2:
-                    displayHighScores();
-                    break;
-                case 3:
-                    exit = true;
-                    if (serverRunning && !serverSocket.isClosed()) {
-                        try {
-                            serverSocket.close(); // Stops the server
-                        } catch (IOException e) {
-                            System.out.println("Error closing server: " + e.getMessage());
-                        }
-                    }
-                    break;
-                default:
-                    System.out.println("Invalid option.");
-            }
+        if (args.length < 1) {
+            System.out.println("Usage: java MathServer <port>");
+            return;
         }
 
-        scanner.close();
-        System.exit(0);
-    }
+        int port = Integer.parseInt(args[0]);
+        try {
+            serverSocket = new ServerSocket(port);
+            System.out.println("Server is listening on port " + port);
+            generateExpressions();
 
-    private static Thread prepareServerThread(int port) {
-        return new Thread(() -> {
-            try {
-                serverSocket = new ServerSocket(port);
-                serverRunning = true;
-                System.out.println("Server is listening on port " + port);
-                generateExpressions();
+            // TODO: when connecting to the server, assign a token to the user
+            // 1. Assign token to the user
+            // 2. Maintain a queue of clients waiting to play the game
+            // 3. If a client's connection is lost unexpectedly, keep track of their token
+            // and their position in the queue.
+            // 4. When a client reconnects, send their token to the server.
+            // 5. Upon receiving the token, check if the token corresponds to a client in
+            // the waiting queue.
+            // 6. If the token matches, resume the client's game session from their saved
+            // state.
 
-                while (!serverSocket.isClosed()) {
-                    Socket socket = serverSocket.accept();
-                    synchronized (clients) {
-                        clients.add(socket);
-                    }
-                    scores.put(socket, 0);
-                    Thread clientThread = new Thread(new ClientHandler(socket));
-                    clientThread.start();
+            while (true) {
+                Socket socket = serverSocket.accept();
+                clientsLock.lock(); // Lock before modifying the clients list
+
+                try {
+                    clients.add(socket);
+                } finally {
+                    clientsLock.unlock(); // Unlock after modifying the clients list
                 }
-            } catch (IOException ex) {
-                System.out.println("Server exception: " + ex.getMessage());
-                ex.printStackTrace();
-            } finally {
-                serverRunning = false;
-            }
-        });
-    }
 
-    private static void displayHighScores() {
-        System.out.println("High Scores:");
-        scores.entrySet().stream()
-              .sorted(Map.Entry.<Socket, Integer>comparingByValue().reversed())
-              .forEach(e -> System.out.println(e.getKey().getInetAddress().getHostAddress() + ": " + e.getValue()));
+                handleClientConnection(socket);
+
+                // check if client lost connection
+                if (!isConnected(socket)) {
+                    // reconnect client
+                    reconnectClient(socket);
+                    // mark the client as disconnected
+                    // ...
+                } 
+            }
+        } catch (IOException e) {
+            System.out.println("Could not listen on port: " + port);
+            e.printStackTrace();
+        }
     }
 
     private static void generateExpressions() {
@@ -104,11 +70,11 @@ public class MathServer {
 
             String expression;
             if (random.nextBoolean()) {
-                String[] operators = {"+", "-", "*", "/"};
+                String[] operators = { "+", "-", "*", "/" };
                 String operator = operators[random.nextInt(operators.length)];
                 expression = num1 + " " + operator + " " + num2;
             } else {
-                String[] operators = {"+", "-", "*"};
+                String[] operators = { "+", "-", "*" };
                 String operator1 = operators[random.nextInt(operators.length)];
                 String operator2 = operators[random.nextInt(operators.length)];
                 expression = num1 + " " + operator1 + " " + num2 + " " + operator2 + " " + num3;
@@ -118,53 +84,101 @@ public class MathServer {
         }
     }
 
+    private static int evaluateExpression(String expression) {
+        String[] parts = expression.split(" ");
+        int result = Integer.parseInt(parts[0]);
+
+        for (int i = 1; i < parts.length; i += 2) {
+            String operator = parts[i];
+            int nextOperand = Integer.parseInt(parts[i + 1]);
+
+            switch (operator) {
+                case "+":
+                    result += nextOperand;
+                    break;
+                case "-":
+                    result -= nextOperand;
+                    break;
+                case "*":
+                    result *= nextOperand;
+                    break;
+                case "/":
+                    if (nextOperand != 0)
+                        result /= nextOperand;
+                    break;
+            }
+        }
+        return result;
+    }
+
+    private static void handleClientConnection(Socket socket) {
+        UUID clientToken = UUID.randomUUID();
+        User user = new User("player1", "password", 100, socket, clientToken);
+
+        // add client to the map
+        clientsMap.put(clientToken, user);
+
+        synchronized (waitingQueue) {
+            waitingQueue.add(user); // add client to the queue
+        }
+
+        new Thread(new ClientHandler(socket, clientToken)).start();
+    }
+
+    private static boolean isConnected(Socket socket) {
+        return !socket.isClosed();
+    }
+
+    // private static void reconnectClient(Socket socket) {
+        // compare client's token to the clientsMap 
+    }
+
     private static class ClientHandler implements Runnable {
         private Socket socket;
+        private UUID clientToken;
 
-        public ClientHandler(Socket socket) {
+        public ClientHandler(Socket socket, UUID token) {
             this.socket = socket;
+            this.clientToken = token;
         }
 
         @Override
         public void run() {
             try {
-                OutputStream output = socket.getOutputStream();
-                PrintWriter writer = new PrintWriter(output, true);
-                InputStream input = socket.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                // Send all questions immediately after connection
                 for (int i = 0; i < expressions.size(); i++) {
-                    String question = "Question " + (i + 1) + ": " + expressions.get(i);
-                    writer.println(question);
+                    out.println("Question " + (i + 1) + ": " + expressions.get(i));
                 }
+                out.println("END_OF_QUESTIONS");
 
-                // Process responses
-                int questionIndex = 0;
-                while (questionIndex < expressions.size()) {
-                    String response = reader.readLine();
-                    if (response == null) break; // Client disconnected
-
-                    int answer = Integer.parseInt(response.trim());
-                    int correctAnswer = Integer.parseInt(expressions.get(questionIndex).split(" \\+ ")[1]) + 
-                                        Integer.parseInt(expressions.get(questionIndex).split(" \\+ ")[0]);
-
-                    if (answer == correctAnswer) {
-                        scores.put(socket, scores.getOrDefault(socket, 0) + 2);
+                String inputLine;
+                int score = 0;
+                int index = 0;
+                while ((inputLine = in.readLine()) != null) {
+                    try {
+                        int answer = Integer.parseInt(inputLine.trim());
+                        if (answer == results.get(index)) {
+                            score += 2;
+                        }
+                        index++;
+                        if (index >= expressions.size())
+                            break;
+                    } catch (NumberFormatException e) {
+                        out.println("Please enter a valid number.");
                     }
-
-                    questionIndex++;
                 }
 
-                writer.println("Game Over! Your score: " + scores.get(socket));
-
-            } catch (IOException ex) {
-                System.out.println("Client disconnected: " + ex.getMessage());
+                out.println("Your score: " + score);
+            } catch (IOException e) {
+                System.out.println("Exception caught when trying to listen on port or listening for a connection");
+                System.out.println(e.getMessage());
             } finally {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    System.out.println("Error closing client socket: " + e.getMessage());
+                    System.out.println("Could not close the socket.");
                 }
             }
         }
