@@ -25,7 +25,12 @@ public class MathClient {
                     System.out.println("Exiting client.");
                     break;
                 } else if ("1".equals(choice)) {
-                    connectToServer(hostname, port, userInputReader);
+                    System.out.print("Enter username: ");
+                    String username = userInputReader.readLine();
+                    System.out.print("Enter password: ");
+                    String password = userInputReader.readLine();
+
+                    authenticateAndPlay(hostname, port, username, password);
                 } else {
                     System.out.println("Invalid option. Please try again.");
                 }
@@ -35,27 +40,24 @@ public class MathClient {
         }
     }
 
-    private static void connectToServer(String hostname, int port, BufferedReader userInputReader) {
+    private static void authenticateAndPlay(String hostname, int port, String username, String password) {
         try (Socket socket = new Socket(hostname, port);
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
 
-            System.out.println("Connected to the server. Ready to answer questions!");
+            // Send username and password to server for authentication
+            writer.println(username);
+            writer.println(password);
 
-            String fromServer;
-            while ((fromServer = reader.readLine()) != null) {
-                if ("END_OF_QUESTIONS".equals(fromServer)) {
-                    break;
-                }
-                System.out.println(fromServer);
+            // Receive authentication response from server
+            String response = reader.readLine();
 
-                System.out.print("Your answer: ");
-                String userResponse = userInputReader.readLine();
-                writer.println(userResponse);
+            if ("AUTH_SUCCESS".equals(response)) {
+                System.out.println("Authentication successful. Connected to the server.");
+                playGame(reader, writer);
+            } else {
+                System.out.println("Authentication failed. Please try again.");
             }
-
-            // Receive final score
-            System.out.println(reader.readLine());
 
         } catch (UnknownHostException e) {
             System.out.println("Don't know about host " + hostname);
@@ -64,5 +66,23 @@ public class MathClient {
             System.out.println("Couldn't get I/O for the connection to " + hostname);
             e.printStackTrace();
         }
+    }
+
+    private static void playGame(BufferedReader reader, PrintWriter writer) throws IOException {
+        System.out.println("Ready to answer questions!");
+        String fromServer;
+        while ((fromServer = reader.readLine()) != null) {
+            if ("END_OF_QUESTIONS".equals(fromServer)) {
+                break;
+            }
+            System.out.println(fromServer);
+
+            System.out.print("Your answer: ");
+            String userResponse = new BufferedReader(new InputStreamReader(System.in)).readLine();
+            writer.println(userResponse);
+        }
+
+        // Receive final score
+        System.out.println(reader.readLine());
     }
 }

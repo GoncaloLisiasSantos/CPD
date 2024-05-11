@@ -89,22 +89,45 @@ public class MathServer {
 
     private static class ClientHandler implements Runnable {
         private Socket socket;
-
+    
         public ClientHandler(Socket socket) {
             this.socket = socket;
         }
-
+    
         @Override
         public void run() {
             try {
                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
+    
+                String username = in.readLine();
+                String passwordHash = hashPassword(in.readLine());
+    
+                // Authenticate the user using DatabaseManager
+                String authenticationResult = DatabaseManager.authenticate(username, passwordHash);
+    
+                if ("AUTH_SUCCESS".equals(authenticationResult)) {
+                    out.println("AUTH_SUCCESS");
+                    // Proceed with the game logic
+                    playGame(out, in);
+                } else {
+                    out.println("AUTH_FAIL");
+                    socket.close(); // Close the connection
+                }
+    
+            } catch (IOException e) {
+                System.out.println("Exception caught when trying to listen on port or listening for a connection");
+                System.out.println(e.getMessage());
+            }
+        }
+    
+        private void playGame(PrintWriter out, BufferedReader in) throws IOException {
+            try {
                 for (int i = 0; i < expressions.size(); i++) {
                     out.println("Question " + (i + 1) + ": " + expressions.get(i));
                 }
                 out.println("END_OF_QUESTIONS");
-
+    
                 String inputLine;
                 int score = 0;
                 int index = 0;
@@ -120,18 +143,18 @@ public class MathServer {
                         out.println("Please enter a valid number.");
                     }
                 }
-
+    
                 out.println("Your score: " + score);
-            } catch (IOException e) {
-                System.out.println("Exception caught when trying to listen on port or listening for a connection");
-                System.out.println(e.getMessage());
             } finally {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    System.out.println("Could not close the socket.");
-                }
+                socket.close(); // Close the connection after the game
             }
         }
+    
+        private static String hashPassword(String password) {
+            // Implement password hashing algorithm (e.g., SHA-256)
+            // Return hashed password
+            return password;
+        }
     }
+    
 }
