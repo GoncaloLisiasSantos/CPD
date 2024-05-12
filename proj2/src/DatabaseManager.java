@@ -29,4 +29,26 @@ public class DatabaseManager {
         }
         return "AUTH_FAIL"; // Authentication failed
     }
+
+    // register a new player
+    public static String register(String username, String passwordHash) {
+        // Check if the username already exists
+        List<Player> players = readPlayers();
+        for (Player player : players) {
+            if (player.getUsername().equals(username)) {
+                System.out.println("Username already exists. Please choose a different username.");
+                return "REG_FAIL";
+            }
+        }
+    
+        // Add the new player to the database
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(DATABASE_FILE, true))) {
+            writer.write(username + "," + passwordHash + ",0\n");
+            return "REG_SUCCESS";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "REG_FAIL";
+        }
+    }
+    
 }
