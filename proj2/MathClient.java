@@ -59,13 +59,13 @@ public class MathClient {
                     } else {
                         nrOfRetries++;
                         sendClientToken(socket);
-                        // if server response is ok, we call connectToServer(hostname, port,
+
+                        // if server response is ok ("Reconnecting..."), we call connectToServer(hostname, port,
                         // userInputReader);
                         BufferedReader serverResponse = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                         String serverResponseStr = serverResponse.toString();
-
                         if (serverResponseStr.equals("Reconnecting...")) {
-                            // client was able to reconnect
+                            // client is able to reconnect
                             connectToServer(hostname, port, userInputReader);
                         }
                     }
@@ -104,6 +104,5 @@ public class MathClient {
     private static void sendClientToken(Socket socket) throws IOException {
         PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
         writer.println(clientToken);
-        ;
     }
 }

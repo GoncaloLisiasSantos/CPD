@@ -9,7 +9,7 @@ public class MathServer {
     private static Lock clientsLock = new ReentrantLock(); // Lock for managing clients list
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
-    private static Queue<User> waitingQueue = new LinkedList<>(); // clients waiting in the queue to connect to the
+    private static Queue<User> waitingQueue = new LinkedList<>(); // clients waiting in the queue to connect to the server
     private static Map<UUID, User> clientsMap = new HashMap<>(); // just to have something that links tokens to clients
 
     public static void main(String[] args) {
@@ -164,6 +164,16 @@ public class MathServer {
             this.socket = socket;
             this.clientToken = token;
         }
+
+        // TODO: try to figure out a way to send the clientToken
+        // try {
+        //     PrintWriter sendToken = new PrintWriter(socket.getOutputStream(), true);
+        //     sendToken.println(clientToken.toString());
+        // } catch (IOException e) {
+        //     System.out.println("Exception caught when trying to listen on port or listening for a connection");
+        //     System.out.println(e.getMessage());
+        // };
+
 
         @Override
         public void run() {
