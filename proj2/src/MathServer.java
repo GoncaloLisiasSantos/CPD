@@ -141,6 +141,12 @@ public class MathServer {
         }
 
         private void playGame(PrintWriter out, BufferedReader in) throws IOException {
+            // Clear previous expressions and results
+            expressions.clear();
+            results.clear();
+    
+            // Generate new expressions for this session
+            generateExpressions();
             try {
                 for (int i = 0; i < expressions.size(); i++) {
                     out.println("Question " + (i + 1) + ": " + expressions.get(i));
