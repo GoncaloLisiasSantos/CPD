@@ -4,6 +4,17 @@ import java.util.*;
 public class DatabaseManager {
     private static final String DATABASE_FILE = "../database.txt";
 
+    // get player 
+    public static Player getPlayer(String username, String passwordHash) {
+        List<Player> players = readPlayers();
+        for (Player player : players) {
+            if (player.getUsername().equals(username) && player.getPasswordHash().equals(passwordHash)) {
+                return player;
+            }
+        }
+        return null;
+    }
+
     public static List<Player> readPlayers() {
         List<Player> players = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(DATABASE_FILE))) {

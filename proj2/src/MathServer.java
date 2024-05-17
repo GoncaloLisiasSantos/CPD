@@ -6,6 +6,7 @@ import java.util.concurrent.locks.*;
 public class MathServer {
     private static ServerSocket serverSocket;
     private static List<Socket> clients = new ArrayList<>();
+    private static List<Player> players = new ArrayList<>();
     private static Lock clientsLock = new ReentrantLock(); // Lock for managing clients list
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
@@ -20,7 +21,7 @@ public class MathServer {
         try {
             serverSocket = new ServerSocket(port);
             System.out.println("Server is listening on port " + port);
-
+            
             generateExpressions();
 
             while (true) {
@@ -42,10 +43,9 @@ public class MathServer {
     private static void generateExpressions() {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            int num1 = random.nextInt(10) + 1;
-            int num2 = random.nextInt(10) + 1;
-            int num3 = random.nextInt(10) + 1;
-
+            int num1 = random.nextInt(50) + 1;
+            int num2 = random.nextInt(50) + 1;
+            int num3 = random.nextInt(50) + 1;
             String expression;
             if (random.nextBoolean()) {
                 String[] operators = { "+", "-", "*", "/" };
@@ -123,11 +123,25 @@ public class MathServer {
 
                     // Authenticate the user using DatabaseManager
                     String authenticationResult = DatabaseManager.authenticate(username, passwordHash);
+                    Player player = DatabaseManager.getPlayer(username, passwordHash);
 
                     if ("AUTH_SUCCESS".equals(authenticationResult)) {
                         out.println("AUTH_SUCCESS");
-                        // Proceed with the game logic
-                        playGame(out, in);
+                        players.add(player);
+                        if (players.size() > 1) {
+                            clientsLock.lock(); // Lock before modifying the clients list
+                            try {
+                                for (Socket client : clients) {
+                                    if (client != socket) {
+                                        PrintWriter clientOut = new PrintWriter(client.getOutputStream(), true);
+                                        clientOut.println("GAME_START");
+                                        playGame(out, in);
+                                    }
+                                }
+                            } finally {
+                                clientsLock.unlock(); // Unlock after modifying the clients list
+                            }
+                        }
                     } else {
                         out.println("AUTH_FAIL");
                         socket.close(); // Close the connection
@@ -140,13 +154,7 @@ public class MathServer {
             }
         }
 
-        private void playGame(PrintWriter out, BufferedReader in) throws IOException {
-            // Clear previous expressions and results
-            expressions.clear();
-            results.clear();
-    
-            // Generate new expressions for this session
-            generateExpressions();
+        private void playGame(PrintWriter out, BufferedReader in) throws IOException {    
             try {
                 for (int i = 0; i < expressions.size(); i++) {
                     out.println("Question " + (i + 1) + ": " + expressions.get(i));
@@ -159,8 +167,11 @@ public class MathServer {
                 while ((inputLine = in.readLine()) != null) {
                     try {
                         int answer = Integer.parseInt(inputLine.trim());
+                        int dif = Math.abs(results.get(index) - answer);
                         if (answer == results.get(index)) {
-                            score += 2;
+                            score += 10;
+                        } else if (dif <= results.get(index)/10) {
+                            score += 10-dif;
                         }
                         index++;
                         if (index >= expressions.size())
@@ -175,6 +186,7 @@ public class MathServer {
                 socket.close(); // Close the connection after the game
             }
         }
+        
 
         private static String hashPassword(String password) {
             // Implement password hashing algorithm (e.g., SHA-256)
