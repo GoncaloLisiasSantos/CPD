@@ -13,13 +13,14 @@ import java.util.*;
 
 public class DatabaseManager {
     private static final String DATABASE_FILE = "../database.txt";
+    private final Path path = Paths.get("../database.txt");
 
     private static List<Player> players;
 
     DatabaseManager() {
         players = new ArrayList<>();
         try {
-            List<String> lines = Files.readAllLines(this.DATABASE_FILE, StandardCharsets.UTF_8);
+            List<String> lines = Files.readAllLines(this.path, StandardCharsets.UTF_8);
             for (int i = 2; i < lines.size(); i++) {
                 String[] playerData = lines.get(i).split(" - ");
                 Token token = generateToken(1000);
@@ -81,9 +82,9 @@ public class DatabaseManager {
         return false;
     }
     return false;
-}
+    }
 
-    public static Boolean register(String username, String passwordHash) {
+    public Boolean register(String username, String passwordHash) {
         for (Player player : players) {
             if (player.getUsername().equals(username)) {
                 return false;
@@ -95,7 +96,7 @@ public class DatabaseManager {
     
         String playerData = "\n" + username + "," + passwordHash + "," + 0 + "";
         try {
-            Files.writeString(this.DATABASE_FILE, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.writeString(this.path, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e) {
             System.out.print("Invalid Path");
         }
