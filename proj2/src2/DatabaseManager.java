@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.io.FileWriter;
 import java.util.*;
 
 
@@ -20,7 +22,8 @@ public class DatabaseManager {
             List<String> lines = Files.readAllLines(this.DATABASE_FILE, StandardCharsets.UTF_8);
             for (int i = 2; i < lines.size(); i++) {
                 String[] playerData = lines.get(i).split(" - ");
-                Player p = new Player(playerData[0], playerData[1], Integer.parseInt(playerData[2]));
+                Token token = generateToken(1000);
+                Player p = new Player(playerData[0], playerData[1], Integer.parseInt(playerData[2]), token);
                 players.add(p);
             }
 
@@ -31,7 +34,7 @@ public class DatabaseManager {
 
 
     public static List<Player> getPlayers() {
-        return playerList;
+        return players;
     }
  
     public static Player getPlayer(String username, String passwordHash) {
@@ -44,7 +47,7 @@ public class DatabaseManager {
     }
 
     public  static Player getPlayerByChannel(SocketChannel channel){
-        return playerList.stream()
+        return players.stream()
                 .filter(player -> {
                     SocketChannel playerChannel = player.getChannel();
                     return playerChannel != null && playerChannel.equals(channel);
@@ -62,7 +65,7 @@ public class DatabaseManager {
                 // Check if the player's token has expired
                 Token player_token = player.getToken();
                 if (player_token == null || player_token.isExpired()) {
-                    player_token = generateTokens(username, 1800); // Generate a new player_token with 30 minutes expiry
+                    player_token = generateToken(1800); // Generate a new player_token with 30 minutes expiry
                     player.setToken(player_token);
                 }
                 player.setLoggedIn(true);
@@ -80,26 +83,26 @@ public class DatabaseManager {
     return false;
 }
 
-    public static String register(String username, String passwordHash) {
+    public static Boolean register(String username, String passwordHash) {
         for (Player player : players) {
             if (player.getUsername().equals(username)) {
                 return false;
             }
         }
-        Player newPlayer = new Player(username, passwordHash, 0);
+        Player newPlayer = new Player(username, passwordHash, 0, null);
         newPlayer.setLoggedIn(true);
         players.add(newPlayer);
     
-        String playerData = "\n" + username + "," + password + "," + 0 ;
+        String playerData = "\n" + username + "," + passwordHash + "," + 0 + "";
         try {
-            Files.writeString(this.path, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.writeString(this.DATABASE_FILE, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e) {
             System.out.print("Invalid Path");
         }
         return true;
     }
 
-    public static Token generateTokens (String username, int expiryTime ){
+    public static Token generateToken (int expiryTime ){
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         int length = 10;
 
@@ -112,7 +115,7 @@ public class DatabaseManager {
             new_token.append(c);
         }
 
-        aux = new_token.toString();
+        String aux = new_token.toString();
 
         LocalDateTime expiry = LocalDateTime.now().plusSeconds(expiryTime);
         

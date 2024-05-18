@@ -47,7 +47,7 @@ public class Player {
       return this.channel;
   }
 
-  public Token getPlayerToken(){
+  public Token getToken(){
       return this.player_token;
   }
 
