@@ -4,7 +4,7 @@ public class Token {
     private String token_id;
     private LocalDateTime expiryTime;
 
-    public SecureToken(String token_id, LocalDateTime expiryTime) {
+    public Token(String token_id, LocalDateTime expiryTime) {
         this.token_id = token_id;
         this.expiryTime = expiryTime;
     }

@@ -126,6 +126,7 @@ public class DatabaseManager {
             System.out.println("An error occurred.");
             e.printStackTrace();  
     }
+    }
 
     public void signOutPlayer(String username) {
         boolean playerExists = false;
@@ -141,5 +142,4 @@ public class DatabaseManager {
         }
     }
     
-    }
 }

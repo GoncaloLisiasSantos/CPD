@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.channels.SocketChannel;
 import java.util.*;
 
 public class Player {
@@ -7,13 +8,14 @@ public class Player {
   private String passwordHash;
   private Integer highScore;
   protected boolean isLoggedIn;
+  private Token player_token;
   private SocketChannel channel;
 
-  public Player(String username, String passwordHash, Integer highScore) {
+  public Player(String username, String passwordHash, Integer highScore, Token token) {
       this.username = username;
       this.passwordHash = passwordHash;
       this.highScore = highScore;
-      private Token player_token ;
+      this.player_token = token;
       this.isLoggedIn = false;
   }
 
