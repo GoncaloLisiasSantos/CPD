@@ -8,6 +8,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.SecureRandom;
 import java.util.*;
 
+
 public class DatabaseManager {
     private static final String DATABASE_FILE = "../database.txt";
 
@@ -27,6 +28,7 @@ public class DatabaseManager {
             System.out.print("Invalid Path");
         }
     }
+
 
     public static List<Player> getPlayers() {
         return playerList;
@@ -52,25 +54,31 @@ public class DatabaseManager {
     }
 
     public boolean authenticate(String username, String passwordHash) {
-        boolean playerExists = false;
-        for (Player player : players) {
-            if  (player.getUsername().equals(username)) {
-                playerExists = true;
-                if (player.getPasswordHash().equals(passwordHash)) {
-                    player.setLoggedIn(true);
-                    return true;
-                } else {
-                    System.out.println("Invalid Password");
-                    return false;
+    boolean playerExists = false;
+    for (Player player : players) {
+        if  (player.getUsername().equals(username)) {
+            playerExists = true;
+            if (player.getPasswordHash().equals(passwordHash)) {
+                // Check if the player's token has expired
+                Token player_token = player.getToken();
+                if (player_token == null || player_token.isExpired()) {
+                    player_token = generateTokens(username, 1800); // Generate a new player_token with 30 minutes expiry
+                    player.setToken(player_token);
                 }
-            }      
-        }
-        if (!playerExists) {
-            System.out.println("Player does not exist. Please register.");
-            return false;
-        }
+                player.setLoggedIn(true);
+                return true;
+            } else {
+                System.out.println("Invalid Password");
+                return false;
+            }
+        }      
+    }
+    if (!playerExists) {
+        System.out.println("Player does not exist. Please register.");
         return false;
     }
+    return false;
+}
 
     public static String register(String username, String passwordHash) {
         for (Player player : players) {
@@ -91,6 +99,34 @@ public class DatabaseManager {
         return true;
     }
 
+    public static Token generateTokens (String username, int expiryTime ){
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        int length = 10;
+
+        Random random = new Random();
+        StringBuilder new_token = new StringBuilder();
+
+        for (int i = 0; i < length; i++) {
+            int index = random.nextInt(chars.length());
+            char c = chars.charAt(index);
+            new_token.append(c);
+        }
+
+        aux = new_token.toString();
+
+        LocalDateTime expiry = LocalDateTime.now().plusSeconds(expiryTime);
+        
+        return new Token(aux, expiry);
+    }
+
+    public static void tokenFile(String username, String token) {
+        try (FileWriter writer = new FileWriter("token"+username+".txt")) {
+            writer.write(token);
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();  
+    }
+
     public void signOutPlayer(String username) {
         boolean playerExists = false;
         for (Player player : players) {
@@ -105,4 +141,5 @@ public class DatabaseManager {
         }
     }
     
+    }
 }

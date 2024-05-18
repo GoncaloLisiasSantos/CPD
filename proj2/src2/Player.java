@@ -13,6 +13,7 @@ public class Player {
       this.username = username;
       this.passwordHash = passwordHash;
       this.highScore = highScore;
+      private Token player_token ;
       this.isLoggedIn = false;
   }
 
@@ -42,6 +43,14 @@ public class Player {
 
   public  SocketChannel getChannel(){
       return this.channel;
+  }
+
+  public Token getPlayerToken(){
+      return this.player_token;
+  }
+
+  public void setToken(Token player_token){
+      this.player_token = player_token;
   }
 
   public void setChannel(SocketChannel channel) {
