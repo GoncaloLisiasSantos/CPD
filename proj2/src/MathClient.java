@@ -125,5 +125,10 @@ public class MathClient {
 
         // Receive final score
         System.out.println(reader.readLine());
+
+        System.out.println(reader.readLine());
+        System.out.println(reader.readLine());
+        System.out.println(reader.readLine());
+
     }
 }

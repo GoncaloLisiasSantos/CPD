@@ -1,13 +1,16 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
 public class MathServer {
     private static ServerSocket serverSocket;
-    private static List<Socket> clients = new ArrayList<>();
-    private static List<Player> players = new ArrayList<>();
-    private static Lock clientsLock = new ReentrantLock(); // Lock for managing clients list
+    private static Queue<Player> playerQueue = new LinkedList<>();
+    private static Lock queueLock = new ReentrantLock(); // Lock for managing the player queue
+    private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static boolean gameStarted = false;
+    private static final int TIMEOUT = 30; // Time in seconds to wait before starting the game
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
 
@@ -26,12 +29,6 @@ public class MathServer {
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                clientsLock.lock(); // Lock before modifying the clients list
-                try {
-                    clients.add(socket);
-                } finally {
-                    clientsLock.unlock(); // Unlock after modifying the clients list
-                }
                 new Thread(new ClientHandler(socket)).start();
             }
         } catch (IOException e) {
@@ -103,7 +100,6 @@ public class MathServer {
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                 String command = in.readLine(); // Read the command from the client
-                System.out.println("Command received: " + command);
                 if ("REGISTER".equals(command)) { // Check if the command is for registration
                     String username = in.readLine();
                     String passwordHash = hashPassword(in.readLine());
@@ -117,7 +113,6 @@ public class MathServer {
                         out.println("REG_FAIL"); // Notify the client about registration failure
                     }
                 } else { // Handle authentication for other commands
-                    System.out.println("Command received: " + command);
                     String username = in.readLine();
                     String passwordHash = hashPassword(in.readLine());
 
@@ -127,8 +122,17 @@ public class MathServer {
 
                     if ("AUTH_SUCCESS".equals(authenticationResult)) {
                         out.println("AUTH_SUCCESS");
-                        players.add(player);
-                        playGame(out, in);
+
+                        queueLock.lock(); // Lock before modifying the player queue
+                        try {
+                            playerQueue.add(player);
+                            if (playerQueue.size() >= 2 && !gameStarted) {
+                                gameStarted = true;
+                                scheduler.schedule(MathServer::startGame, TIMEOUT, TimeUnit.SECONDS);
+                            }
+                        } finally {
+                            queueLock.unlock(); // Unlock after modifying the player queue
+                        }
                     } else {
                         out.println("AUTH_FAIL");
                         socket.close(); // Close the connection
@@ -141,49 +145,6 @@ public class MathServer {
             }
         }
 
-        private void playGame(PrintWriter out, BufferedReader in) throws IOException {    
-            try {
-                for (int i = 0; i < expressions.size(); i++) {
-                    out.println("Question " + (i + 1) + ": " + expressions.get(i));
-                }
-                out.println("END_OF_QUESTIONS");
-
-                String inputLine;
-                int score = 0;
-                int index = 0;
-                while ((inputLine = in.readLine()) != null) {
-                    try {
-                        int answer = Integer.parseInt(inputLine.trim());
-                        int dif = Math.abs(results.get(index) - answer);
-                        if (answer == results.get(index)) {
-                            score += 10;
-                        } else if (dif <= results.get(index)/10) {
-                            score += 10-dif;
-                        }
-                        index++;
-                        if (index >= expressions.size())
-                            break;
-                    } catch (NumberFormatException e) {
-                        out.println("Please enter a valid number.");
-                    }
-                }
-                out.println("Your: " + score);
-                out.println("1- play again");
-                out.println("2- exit");
-                String choice = in.readLine();
-                if (choice.equals("1")) {
-                    playGame(out, in);
-                } else {
-                    out.println("Goodbye!");
-                }
-            } finally {
-                socket.close(); // Close the connection after the game
-                // Remove the player from the list
-                players.remove(players.size() - 1);
-            }
-        }
-        
-
         private static String hashPassword(String password) {
             // Implement password hashing algorithm (e.g., SHA-256)
             // Return hashed password
@@ -191,4 +152,20 @@ public class MathServer {
         }
     }
 
+    private static void startGame() {
+        queueLock.lock(); // Lock before accessing the player queue
+        try {
+            if (playerQueue.size() >= 2) {
+                while (!playerQueue.isEmpty()) {
+                    Player player = playerQueue.poll();
+                    // Notify players and start the game
+                    // You would need to send messages to all players
+                }
+            } else {
+                gameStarted = false; // Reset the gameStarted flag if not enough players
+            }
+        } finally {
+            queueLock.unlock(); // Unlock after accessing the player queue
+        }
+    }
 }
