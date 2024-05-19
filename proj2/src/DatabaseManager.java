@@ -14,6 +14,7 @@ import java.util.*;
 public class DatabaseManager {
     private static final Path path = Paths.get("../database.txt");
     private static List<Player> players = new ArrayList<>();
+    private static Queue<Player> playerQueue = new LinkedList<>();
 
     public DatabaseManager() {
         try (BufferedReader reader = new BufferedReader(new FileReader(path.toString()))) {
@@ -21,7 +22,7 @@ public class DatabaseManager {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 if (parts.length < 3) {
-                    continue; // Pular linhas que não têm o formato correto
+                    continue; // Skip lines that don't have the correct format
                 }
                 String username = parts[0];
                 String passwordHash = parts[1];
@@ -136,8 +137,20 @@ public class DatabaseManager {
         System.out.println("Player does not exist.");
     }
 
-    // Adicionando método de hash
     public static String hashPassword(String password) {
         return Integer.toString(password.hashCode());
+    }
+
+    // Player queue management methods
+    public static void addPlayerToQueue(Player player) {
+        playerQueue.add(player);
+    }
+
+    public static Player removePlayerFromQueue() {
+        return playerQueue.poll();
+    }
+
+    public static int getQueueSize() {
+        return playerQueue.size();
     }
 }
