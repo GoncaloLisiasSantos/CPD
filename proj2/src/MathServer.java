@@ -6,10 +6,10 @@ import java.util.concurrent.locks.*;
 public class MathServer {
     private static ServerSocket serverSocket;
     private static List<Socket> clients = new ArrayList<>();
-    private static List<Player> players = new ArrayList<>();
-    private static Lock clientsLock = new ReentrantLock(); // Lock for managing clients list
+    private static Lock clientsLock = new ReentrantLock();
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
+    private static DatabaseManager dbManager;
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -21,16 +21,18 @@ public class MathServer {
         try {
             serverSocket = new ServerSocket(port);
             System.out.println("Server is listening on port " + port);
-            
+
+            dbManager = new DatabaseManager();
+
             generateExpressions();
 
             while (true) {
                 Socket socket = serverSocket.accept();
-                clientsLock.lock(); // Lock before modifying the clients list
+                clientsLock.lock();
                 try {
                     clients.add(socket);
                 } finally {
-                    clientsLock.unlock(); // Unlock after modifying the clients list
+                    clientsLock.unlock();
                 }
                 new Thread(new ClientHandler(socket)).start();
             }
@@ -43,9 +45,10 @@ public class MathServer {
     private static void generateExpressions() {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            int num1 = random.nextInt(50) + 1;
-            int num2 = random.nextInt(50) + 1;
-            int num3 = random.nextInt(50) + 1;
+            int num1 = random.nextInt(10) + 1;
+            int num2 = random.nextInt(10) + 1;
+            int num3 = random.nextInt(10) + 1;
+
             String expression;
             if (random.nextBoolean()) {
                 String[] operators = { "+", "-", "*", "/" };
@@ -103,92 +106,60 @@ public class MathServer {
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
                 String command = in.readLine(); // Read the command from the client
-                System.out.println("Command received: " + command);
-                if ("REGISTER".equals(command)) { // Check if the command is for registration
+                if ("REGISTER".equals(command)) {
                     String username = in.readLine();
-                    String passwordHash = hashPassword(in.readLine());
+                    String passwordHash = DatabaseManager.hashPassword(in.readLine());
 
-                    // Register the user using DatabaseManager
-                    String registrationResult = DatabaseManager.register(username, passwordHash);
+                    boolean registrationResult = dbManager.register(username, passwordHash);
 
-                    if ("REG_SUCCESS".equals(registrationResult)) {
-                        out.println("REG_SUCCESS"); // Notify the client about successful registration
+                    if (registrationResult) {
+                        out.println("REG_SUCCESS");
                     } else {
-                        out.println("REG_FAIL"); // Notify the client about registration failure
+                        out.println("REG_FAIL");
                     }
-                } else { // Handle authentication for other commands
-                    System.out.println("Command received: " + command);
+                } else if ("LOGIN".equals(command)) {
                     String username = in.readLine();
-                    String passwordHash = hashPassword(in.readLine());
+                    String passwordHash = DatabaseManager.hashPassword(in.readLine());
 
-                    // Authenticate the user using DatabaseManager
-                    String authenticationResult = DatabaseManager.authenticate(username, passwordHash);
-                    Player player = DatabaseManager.getPlayer(username, passwordHash);
+                    boolean authenticationResult = dbManager.authenticate(username, passwordHash);
 
-                    if ("AUTH_SUCCESS".equals(authenticationResult)) {
+                    if (authenticationResult) {
                         out.println("AUTH_SUCCESS");
-                        players.add(player);
                         playGame(out, in);
                     } else {
                         out.println("AUTH_FAIL");
-                        socket.close(); // Close the connection
+                        socket.close();
                     }
-                }
-
-            } catch (IOException e) {
-                System.out.println("Exception caught when trying to listen on port or listening for a connection");
-                System.out.println(e.getMessage());
-            }
-        }
-
-        private void playGame(PrintWriter out, BufferedReader in) throws IOException {    
-            try {
-                for (int i = 0; i < expressions.size(); i++) {
-                    out.println("Question " + (i + 1) + ": " + expressions.get(i));
-                }
-                out.println("END_OF_QUESTIONS");
-
-                String inputLine;
-                int score = 0;
-                int index = 0;
-                while ((inputLine = in.readLine()) != null) {
-                    try {
-                        int answer = Integer.parseInt(inputLine.trim());
-                        int dif = Math.abs(results.get(index) - answer);
-                        if (answer == results.get(index)) {
-                            score += 10;
-                        } else if (dif <= results.get(index)/10) {
-                            score += 10-dif;
-                        }
-                        index++;
-                        if (index >= expressions.size())
-                            break;
-                    } catch (NumberFormatException e) {
-                        out.println("Please enter a valid number.");
-                    }
-                }
-                out.println("Your: " + score);
-                out.println("1- play again");
-                out.println("2- exit");
-                String choice = in.readLine();
-                if (choice.equals("1")) {
-                    playGame(out, in);
                 } else {
-                    out.println("Goodbye!");
+                    out.println("INVALID_COMMAND");
+                    socket.close();
                 }
-            } finally {
-                socket.close(); // Close the connection after the game
-                // Remove the player from the list
-                players.remove(players.size() - 1);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        
 
-        private static String hashPassword(String password) {
-            // Implement password hashing algorithm (e.g., SHA-256)
-            // Return hashed password
-            return password;
+        private void playGame(PrintWriter out, BufferedReader in) throws IOException {
+            for (int i = 0; i < expressions.size(); i++) {
+                out.println("Question " + (i + 1) + ": " + expressions.get(i));
+
+                // Send the expression to the client and receive the response
+                out.println("ANSWER");
+                String clientResponse = in.readLine();
+
+                try {
+                    int clientResult = Integer.parseInt(clientResponse);
+                    if (clientResult == results.get(i)) {
+                        out.println("CORRECT");
+                    } else {
+                        out.println("WRONG");
+                    }
+                } catch (NumberFormatException e)
+                {
+                    out.println("INVALID_RESPONSE");
+                }
+            }
+            out.println("GAME_OVER");
         }
     }
-
 }

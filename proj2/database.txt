@@ -4,3 +4,6 @@ user3,1234,0
 user4,1234,0
 user5,1234,0
 user6,1234,0
+
+goncalo,1234,0
+pedro,1509442,0

@@ -39,8 +39,7 @@ public class MathClient {
                     String password = userInputReader.readLine();
 
                     registerAndPlay(hostname, port, username, password);
-                }
-                 else {
+                } else {
                     System.out.println("Invalid option. Please try again.");
                 }
             } catch (IOException e) {
@@ -51,8 +50,8 @@ public class MathClient {
 
     private static void loginAndPlay(String hostname, int port, String username, String password) {
         try (Socket socket = new Socket(hostname, port);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
 
             // Send username and password to server for authentication
             writer.println("LOGIN");
@@ -82,16 +81,16 @@ public class MathClient {
         try (Socket socket = new Socket(hostname, port);
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
-    
+
             // Send registration request to the server
             writer.println("REGISTER");
             writer.println(username);
             writer.println(password);
-    
+
             // Receive registration response from server
             String response = reader.readLine();
             System.out.println(response);
-    
+
             if ("REG_SUCCESS".equals(response)) {
                 System.out.println("Registration successful. You can now login and play.");
             } else if ("REG_FAIL".equals(response)) {
@@ -99,7 +98,7 @@ public class MathClient {
             } else {
                 System.out.println("Unknown response from server: " + response);
             }
-    
+
         } catch (UnknownHostException e) {
             System.out.println("Don't know about host " + hostname);
             e.printStackTrace();
@@ -108,7 +107,7 @@ public class MathClient {
             e.printStackTrace();
         }
     }
-    
+
     private static void playGame(BufferedReader reader, PrintWriter writer) throws IOException {
         System.out.println("\nReady to answer questions!");
         String fromServer;
@@ -125,10 +124,5 @@ public class MathClient {
 
         // Receive final score
         System.out.println(reader.readLine());
-
-        System.out.println(reader.readLine());
-        System.out.println(reader.readLine());
-        System.out.println(reader.readLine());
-
     }
 }
