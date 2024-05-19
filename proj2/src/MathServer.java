@@ -8,8 +8,6 @@ public class MathServer {
     private static List<Socket> clients = new ArrayList<>();
     private static Map<String, Socket> playerSockets = new HashMap<>();
     private static Lock clientsLock = new ReentrantLock();
-    private static List<String> expressions = new ArrayList<>();
-    private static List<Integer> results = new ArrayList<>();
     private static DatabaseManager dbManager;
     private static Queue gameQueue = new Queue();
 
@@ -25,8 +23,6 @@ public class MathServer {
             System.out.println("Server is listening on port " + port);
 
             dbManager = new DatabaseManager();
-
-            generateExpressions();
 
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -44,7 +40,8 @@ public class MathServer {
         }
     }
 
-    private static void generateExpressions() {
+    private static List<String> generateExpressions() {
+        List<String> expressions = new ArrayList<>();
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
             int num1 = random.nextInt(20) + 1;
@@ -63,8 +60,16 @@ public class MathServer {
                 expression = num1 + " " + operator1 + " " + num2 + " " + operator2 + " " + num3;
             }
             expressions.add(expression);
+        }
+        return expressions;
+    }
+
+    private static List<Integer> generateResults(List<String> expressions) {
+        List<Integer> results = new ArrayList<>();
+        for (String expression : expressions) {
             results.add(evaluateExpression(expression));
         }
+        return results;
     }
 
     private static int evaluateExpression(String expression) {
@@ -95,6 +100,9 @@ public class MathServer {
             if (socket1 == null || socket2 == null) {
                 return;
             }
+
+            List<String> expressions = generateExpressions();
+            List<Integer> results = generateResults(expressions);
 
             PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
             BufferedReader in1 = new BufferedReader(new InputStreamReader(socket1.getInputStream()));
