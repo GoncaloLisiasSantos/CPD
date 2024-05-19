@@ -7,6 +7,7 @@ public class Player {
   protected boolean isLoggedIn;
   private Token player_token;
   private SocketChannel channel;
+  private String rank;
 
   public Player(String username, String passwordHash, Integer highScore, Token token) {
       this.username = username;
@@ -14,6 +15,7 @@ public class Player {
       this.highScore = highScore;
       this.player_token = token;
       this.isLoggedIn = false;
+      this.rank  = getRank();
   }
 
   public String getUsername() {
@@ -30,6 +32,7 @@ public class Player {
 
   public void setHighScore(Integer highScore) {
       this.highScore = highScore;
+      this.rank = getRank();
   }
 
   public boolean getLoggedIn(){
@@ -55,5 +58,18 @@ public class Player {
   public void setChannel(SocketChannel channel) {
       this.channel = channel;
   }
+
+
+  public String getRank(){
+        if (getHighScore() >= 150) {
+            return "Legend";
+        } else if (getHighScore() >= 100) {
+            return "Gold";
+        } else if (getHighScore() >= 30) {
+            return "Silver";
+        } else {
+            return  "Bronze";
+        }
+    }
   
 }

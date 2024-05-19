@@ -38,6 +38,8 @@ public class DatabaseManager {
         return players;
     }
 
+
+
     public static Player getPlayer(String username, String passwordHash) {
         for (Player player : players) {
             if (player.getUsername().equals(username) && player.getPasswordHash().equals(passwordHash)) {
@@ -89,7 +91,7 @@ public class DatabaseManager {
         newPlayer.setLoggedIn(true);
         players.add(newPlayer);
 
-        String playerData = username + "," + passwordHash + "," + 0 + "\n";
+        String playerData = username + "," + passwordHash + "," + 0 + "," + newPlayer.getRank() + "\n"; 
         try {
             Files.writeString(path, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e) {
@@ -173,7 +175,7 @@ public class DatabaseManager {
     private void updateDatabaseFile() {
         try (FileWriter writer = new FileWriter(path.toString())) {
             for (Player player : players) {
-                String playerData = player.getUsername() + "," + player.getPasswordHash() + "," + player.getHighScore() + "\n";
+                String playerData = player.getUsername() + "," + player.getPasswordHash() + "," + player.getHighScore() + "," + player.getRank() + "\n"; 
                 writer.write(playerData);
             }
         } catch (IOException e) {
@@ -191,9 +193,21 @@ public class DatabaseManager {
                         .append(player.getUsername())
                         .append(": ")
                         .append(player.getHighScore())
+                        .append(": ")
+                        .append(player.getRank())
                         .append("\n");
         }
         return leaderboard.toString();
+    }
+
+
+    public String getRank(String username) {
+        for (Player player : players) {
+            if (player.getUsername().equals(username)) {
+                return player.getRank();
+            }
+        }
+        return "Player does not exist.";
     }
 
 

@@ -1,5 +1,6 @@
-goncalo,1509442,100
-pedrito,1509442,10
-jony,1509442,100
-joao,1509442,70
-simao,1509442,100
+goncalo,1509442,100,Gold
+pedrito,1509442,10,Bronze
+jony,1509442,100,Gold
+joao,1509442,70,Silver
+simao,1509442,100,Gold
+ronaldo,1509442,110,Gold

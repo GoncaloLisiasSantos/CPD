@@ -179,6 +179,7 @@ public class MathServer {
         return playerSockets.get(player);
     }
 
+
     private static class ClientHandler implements Runnable {
         private Socket socket;
 
@@ -209,11 +210,13 @@ public class MathServer {
                     String passwordHash = DatabaseManager.hashPassword(in.readLine());
 
                     boolean authenticationResult = dbManager.authenticate(username, passwordHash);
+                    String rank = dbManager.getRank(username);
+                   
 
                     if (authenticationResult) {
                         out.println("AUTH_SUCCESS");
                         playerSockets.put(username, socket);
-                        gameQueue.enqueue(username);
+                        gameQueue.enqueue(username, rank);
                     } else {
                         out.println("AUTH_FAIL");
                         socket.close();
