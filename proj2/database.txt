@@ -4,3 +4,4 @@ jony,1509442,100,Gold
 joao,1509442,70,Silver
 simao,1509442,100,Gold
 ronaldo,1509442,110,Gold
+juanito,1509442,0,Bronze

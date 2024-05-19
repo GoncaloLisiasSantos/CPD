@@ -70,6 +70,17 @@ public class MathClient {
 
             if ("AUTH_SUCCESS".equals(response)) {
                 System.out.println("Authentication successful. Connected to the server.");
+                System.out.println("1. Simple Mode");
+                System.out.println("2. Ranked Mode");
+                System.out.print("Enter your choice: ");
+                String choice = userInputReader.readLine();
+                if ("1".equals(choice)) {
+                    writer.println("SIMPLE_MODE");
+                } else if ("2".equals(choice)) {
+                    writer.println("RANKED_MODE");
+                } else {
+                    System.out.println("Invalid option. Please try again.");
+                }
                 playGame(reader, writer, userInputReader);
             } else {
                 System.out.println("Authentication failed. Please try again.");

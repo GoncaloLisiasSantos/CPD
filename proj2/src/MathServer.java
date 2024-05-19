@@ -215,8 +215,14 @@ public class MathServer {
 
                     if (authenticationResult) {
                         out.println("AUTH_SUCCESS");
-                        playerSockets.put(username, socket);
-                        gameQueue.enqueue(username, rank);
+                        String mode = in.readLine();
+                        if (mode.equals("SIMPLE_MODE")) {
+                            playerSockets.put(username, socket);
+                            gameQueue.enqueue(username, rank, 0);
+                        } else if (mode.equals("RANKED_MODE")){
+                            playerSockets.put(username, socket);
+                            gameQueue.enqueue(username, rank, 1);
+                        }
                     } else {
                         out.println("AUTH_FAIL");
                         socket.close();
