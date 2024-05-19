@@ -29,6 +29,15 @@ public class Queue {
         String player1 = players.removeFirst();
         String player2 = players.removeFirst();
         System.out.println("Starting game between " + player1 + " and " + player2);
+
+        // Aqui você deve iniciar a lógica do jogo para os dois jogadores
+        new Thread(() -> playGame(player1, player2)).start();
+    }
+
+    private void playGame(String player1, String player2) {
+        // Lógica para iniciar o jogo entre player1 e player2
+        // Este método pode ser ajustado para incluir a lógica de envio e recebimento de mensagens entre os jogadores
+        MathServer.startGameForPlayers(player1, player2);
     }
 
     public synchronized int size() {

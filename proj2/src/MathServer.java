@@ -6,11 +6,12 @@ import java.util.concurrent.locks.*;
 public class MathServer {
     private static ServerSocket serverSocket;
     private static List<Socket> clients = new ArrayList<>();
+    private static Map<String, Socket> playerSockets = new HashMap<>();
     private static Lock clientsLock = new ReentrantLock();
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
     private static DatabaseManager dbManager;
-    private static Queue gameQueue;
+    private static Queue gameQueue = new Queue();
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -26,8 +27,6 @@ public class MathServer {
             dbManager = new DatabaseManager();
 
             generateExpressions();
-
-            gameQueue = new Queue();
 
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -95,6 +94,71 @@ public class MathServer {
         return result;
     }
 
+    public static void startGameForPlayers(String player1, String player2) {
+        try {
+            Socket socket1 = getPlayerSocket(player1);
+            Socket socket2 = getPlayerSocket(player2);
+
+            if (socket1 == null || socket2 == null) {
+                return;
+            }
+
+            PrintWriter out1 = new PrintWriter(socket1.getOutputStream(), true);
+            BufferedReader in1 = new BufferedReader(new InputStreamReader(socket1.getInputStream()));
+
+            PrintWriter out2 = new PrintWriter(socket2.getOutputStream(), true);
+            BufferedReader in2 = new BufferedReader(new InputStreamReader(socket2.getInputStream()));
+
+            // Enviar perguntas e processar respostas para os jogadores
+            for (int i = 0; i < expressions.size(); i++) {
+                out1.println("Question " + (i + 1) + ": " + expressions.get(i));
+                out2.println("Question " + (i + 1) + ": " + expressions.get(i));
+            }
+            out1.println("END_OF_QUESTIONS");
+            out2.println("END_OF_QUESTIONS");
+
+            int score1 = 0;
+            int score2 = 0;
+            String inputLine;
+
+            for (int i = 0; i < expressions.size(); i++) {
+                if ((inputLine = in1.readLine()) != null) {
+                    try {
+                        int answer = Integer.parseInt(inputLine.trim());
+                        if (answer == results.get(i)) {
+                            score1 += 2;
+                        }
+                    } catch (NumberFormatException e) {
+                        out1.println("Please enter a valid number.");
+                    }
+                }
+
+                if ((inputLine = in2.readLine()) != null) {
+                    try {
+                        int answer = Integer.parseInt(inputLine.trim());
+                        if (answer == results.get(i)) {
+                            score2 += 2;
+                        }
+                    } catch (NumberFormatException e) {
+                        out2.println("Please enter a valid number.");
+                    }
+                }
+            }
+
+            out1.println("Your score: " + score1);
+            out2.println("Your score: " + score2);
+
+            socket1.close();
+            socket2.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Socket getPlayerSocket(String player) {
+        return playerSockets.get(player);
+    }
+
     private static class ClientHandler implements Runnable {
         private Socket socket;
 
@@ -128,6 +192,7 @@ public class MathServer {
 
                     if (authenticationResult) {
                         out.println("AUTH_SUCCESS");
+                        playerSockets.put(username, socket);
                         gameQueue.enqueue(username);
                     } else {
                         out.println("AUTH_FAIL");
@@ -139,42 +204,6 @@ public class MathServer {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-        }
-
-         private void playGame(PrintWriter out, BufferedReader in) throws IOException {
-            // Clear previous expressions and results
-            expressions.clear();
-            results.clear();
-    
-            // Generate new expressions for this session
-            generateExpressions();
-            try {
-                for (int i = 0; i < expressions.size(); i++) {
-                    out.println("Question " + (i + 1) + ": " + expressions.get(i));
-                }
-                out.println("END_OF_QUESTIONS");
-
-                String inputLine;
-                int score = 0;
-                int index = 0;
-                while ((inputLine = in.readLine()) != null) {
-                    try {
-                        int answer = Integer.parseInt(inputLine.trim());
-                        if (answer == results.get(index)) {
-                            score += 2;
-                        }
-                        index++;
-                        if (index >= expressions.size())
-                            break;
-                    } catch (NumberFormatException e) {
-                        out.println("Please enter a valid number.");
-                    }
-                }
-
-                out.println("Your score: " + score);
-            } finally {
-                socket.close(); // Close the connection after the game
             }
         }
     }
