@@ -51,6 +51,8 @@ public class MathClient {
     private static void loginAndPlay(String hostname, int port, String username, String password) {
         try (Socket socket = new Socket(hostname, port);
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
+
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
 
             // Send username and password to server for authentication
@@ -63,7 +65,7 @@ public class MathClient {
 
             if ("AUTH_SUCCESS".equals(response)) {
                 System.out.println("Authentication successful. Connected to the server.");
-                playGame(reader, writer);
+                playGame(reader, writer, userInputReader) ;
             } else {
                 System.out.println("Authentication failed. Please try again.");
             }
@@ -108,21 +110,24 @@ public class MathClient {
         }
     }
 
-    private static void playGame(BufferedReader reader, PrintWriter writer) throws IOException {
-        System.out.println("\nReady to answer questions!");
-        String fromServer;
-        while ((fromServer = reader.readLine()) != null) {
-            if ("END_OF_QUESTIONS".equals(fromServer)) {
-                break;
-            }
-            System.out.println(fromServer);
-
-            System.out.print("Your answer: ");
-            String userResponse = new BufferedReader(new InputStreamReader(System.in)).readLine();
-            writer.println(userResponse);
+    private static void playGame(BufferedReader reader, PrintWriter writer, BufferedReader userInputReader) throws IOException {
+    System.out.println("\nReady to answer questions!");
+    String fromServer;
+    while ((fromServer = reader.readLine()) != null) {
+        if ("END_OF_QUESTIONS".equals(fromServer)) {
+            break;
         }
+        System.out.println(fromServer);
 
-        // Receive final score
-        System.out.println(reader.readLine());
+        System.out.print("Your answer: ");
+        String userResponse = userInputReader.readLine(); // Using the passed userInputReader
+        writer.println(userResponse);
     }
+
+    // Receive final score
+    String finalScore = reader.readLine();
+    System.out.println("Final Score: " + finalScore);
+}
+
+
 }

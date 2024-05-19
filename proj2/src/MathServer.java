@@ -10,6 +10,7 @@ public class MathServer {
     private static List<String> expressions = new ArrayList<>();
     private static List<Integer> results = new ArrayList<>();
     private static DatabaseManager dbManager;
+    private static Queue gameQueue;
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -25,6 +26,8 @@ public class MathServer {
             dbManager = new DatabaseManager();
 
             generateExpressions();
+
+            gameQueue = new Queue();
 
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -125,7 +128,7 @@ public class MathServer {
 
                     if (authenticationResult) {
                         out.println("AUTH_SUCCESS");
-                        playGame(out, in);
+                        gameQueue.enqueue(username);
                     } else {
                         out.println("AUTH_FAIL");
                         socket.close();
