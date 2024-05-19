@@ -24,8 +24,4 @@ public class Token {
     public boolean isValid() {
         return !isExpired();
     }
-
-    //public void renewExpiryTime(LocalDateTime newExpiryTime) {
-    //    this.expiryTime = newExpiryTime;
-    //}
 }

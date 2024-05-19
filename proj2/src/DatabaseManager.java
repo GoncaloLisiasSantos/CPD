@@ -21,12 +21,12 @@ public class DatabaseManager {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
                 if (parts.length < 3) {
-                    continue; // Pular linhas que não têm o formato correto
+                    continue;
                 }
                 String username = parts[0];
                 String passwordHash = parts[1];
                 int highScore = Integer.parseInt(parts[2]);
-                Token token = generateToken(1000);
+                Token token = generateToken(1800);
                 players.add(new Player(username, passwordHash, highScore, token));
             }
         } catch (IOException e) {
@@ -63,7 +63,7 @@ public class DatabaseManager {
                 if (player.getPasswordHash().equals(passwordHash)) {
                     Token player_token = player.getToken();
                     if (player_token == null || player_token.isExpired()) {
-                        player_token = generateToken(1800); // Generate a new token with 30 minutes expiry
+                        player_token = generateToken(1800);
                         tokenFile(username, player_token.get_identifier());
                         player.setToken(player_token);
                     }
@@ -119,10 +119,8 @@ public class DatabaseManager {
 
     public static void tokenFile(String username, String token) {
 
-        // Diretório onde os arquivos de token serão armazenados
         String directoryPath = "Tokens";
         
-        // Verifica se o diretório existe, senão cria
         Path directory = Paths.get(directoryPath);
         if (!Files.exists(directory)) {
             try {
@@ -153,7 +151,6 @@ public class DatabaseManager {
         System.out.println("Player does not exist.");
     }
 
-    // Adicionando método de hash
     public static String hashPassword(String password) {
         return Integer.toString(password.hashCode());
     }
@@ -170,7 +167,7 @@ public class DatabaseManager {
                 return false; 
             }
         }
-        return false; // Player not found
+        return false;
     }
 
     private void updateDatabaseFile() {

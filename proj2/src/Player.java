@@ -1,7 +1,4 @@
-import java.io.*;
-import java.net.*;
 import java.nio.channels.SocketChannel;
-import java.util.*;
 
 public class Player {
   private String username;

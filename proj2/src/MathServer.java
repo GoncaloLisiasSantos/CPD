@@ -32,7 +32,7 @@ public class MathServer {
                 } finally {
                     clientsLock.unlock();
                 }
-                new Thread(new ClientHandler(socket)).start();
+                Thread.ofVirtual().start(new ClientHandler(socket));
             }
         } catch (IOException e) {
             System.out.println("Could not listen on port: " + port);
@@ -110,7 +110,6 @@ public class MathServer {
             PrintWriter out2 = new PrintWriter(socket2.getOutputStream(), true);
             BufferedReader in2 = new BufferedReader(new InputStreamReader(socket2.getInputStream()));
 
-            // Enviar perguntas e processar respostas para os jogadores
             for (int i = 0; i < expressions.size(); i++) {
                 out1.println("Question " + (i + 1) + ": " + expressions.get(i));
                 out2.println("Question " + (i + 1) + ": " + expressions.get(i));
@@ -135,7 +134,6 @@ public class MathServer {
                         } else if (dif <= correctAnswer / 10) {
                             score1 += 10 - dif;
                         }
-                        //out1.println("Current score: " + score1);
                     } catch (NumberFormatException e) {
                         out1.println("Please enter a valid number.");
                         continue; // Prompt player 1 again for the same question
@@ -153,7 +151,6 @@ public class MathServer {
                         } else if (dif <= correctAnswer / 10) {
                             score2 += 10 - dif;
                         }
-                        //out2.println("Current score: " + score2);
                     } catch (NumberFormatException e) {
                         out2.println("Please enter a valid number.");
                         continue; // Prompt player 2 again for the same question
