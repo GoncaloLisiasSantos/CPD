@@ -163,8 +163,10 @@ public class MathServer {
                 index++; // Increment index only after both players have answered the current question
             }
 
-            out1.println("Final score: " + score1);
-            out2.println("Final score: " + score2);
+            out1.println("Your Score: " + score1);
+            out1.println(player2 + " Score: " + score2);
+            out2.println("Your Score: " + score2);
+            out2.println(player1 + " Score: " + score1);
 
             dbManager.updateHighScore(player1, score1);
             dbManager.updateHighScore(player2, score2);
