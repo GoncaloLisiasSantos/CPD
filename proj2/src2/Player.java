@@ -10,6 +10,7 @@ public class Player {
   protected boolean isLoggedIn;
   private Token player_token;
   private SocketChannel channel;
+  private Socket socket;
 
   public Player(String username, String passwordHash, Integer highScore, Token token) {
       this.username = username;
@@ -57,6 +58,14 @@ public class Player {
 
   public void setChannel(SocketChannel channel) {
       this.channel = channel;
+  }
+
+  public Socket getSocket() {
+    return socket;
+  }
+
+  public void setSocket(Socket socket) {
+      this.socket = socket;
   }
   
 }

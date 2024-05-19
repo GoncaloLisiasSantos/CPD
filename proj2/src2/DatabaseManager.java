@@ -47,7 +47,7 @@ public class DatabaseManager {
         return null;
     }
 
-    public  static Player getPlayerByChannel(SocketChannel channel){
+    public static Player getPlayerByChannel(SocketChannel channel){
         return players.stream()
                 .filter(player -> {
                     SocketChannel playerChannel = player.getChannel();
@@ -57,7 +57,7 @@ public class DatabaseManager {
                 .orElse(null);
     }
 
-    public boolean authenticate(String username, String passwordHash) {
+    public static boolean authenticate(String username, String passwordHash) {
     boolean playerExists = false;
     for (Player player : players) {
         if  (player.getUsername().equals(username)) {
@@ -84,10 +84,11 @@ public class DatabaseManager {
     return false;
     }
 
-    public Boolean register(String username, String passwordHash) {
+    public static Player register(String username, String passwordHash) {
+        Path path = Paths.get("../database.txt");
         for (Player player : players) {
             if (player.getUsername().equals(username)) {
-                return false;
+                return null;
             }
         }
         Player newPlayer = new Player(username, passwordHash, 0, null);
@@ -96,11 +97,11 @@ public class DatabaseManager {
     
         String playerData = "\n" + username + "," + passwordHash + "," + 0 + "";
         try {
-            Files.writeString(this.path, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+            Files.writeString(path, playerData, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         } catch (IOException e) {
             System.out.print("Invalid Path");
         }
-        return true;
+        return newPlayer;
     }
 
     public static Token generateToken (int expiryTime ){

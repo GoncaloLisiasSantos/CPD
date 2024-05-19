@@ -49,49 +49,25 @@ public class AuthenticationThread extends Thread {
                         String password = response[2];
                         String t = null;
 
-                        if (Authentication.authenticatePlayer(username, password)) {
+                        if (DatabaseManager.authenticate(username, password)) {
                             if(response.length >=4){
                                 t = response[3]; // index out of bounds
                             }
 
-                            Server.lockDB.lock();
-                            Player player = Server.users.get(username);
-                            Server.lockDB.unlock();
+                            Player player = DatabaseManager.getPlayer(username, password);
 
-                            TokenWithExpiration token;
-                            if(t != null){
-
-                                token = player.getToken();
-                                if(token != null){
-                                    if(!token.getToken().equals(t) || token.hasExpired()){
-                                        //colocar a nulo o token
-                                        player.setToken(null);
-
-                                        writer.println("login failed problem with token");
-                                        continue;
-                                    }
-                                }
-                                else {
-                                    writer.println("login failed - this token doesnt exists anymore. please create new connection");
-                                    continue;
-                                }
-
-                            }
-                            else {
-
-                                token = Authentication.generateToken(username, 1);
-                                player.setToken(token);
-                            }
+                            Token token = DatabaseManager.generateToken(1000);
+                            player.setToken(token);
 
                             player.setSocket(socket);
                             player.setChannel(socketChannel);
-                            player.login();
+                            player.setLoggedIn(true);
 
                             Server.lockPlayersQueue.lock();
                             Server.playersQueue.add(player);
                             Server.lockPlayersQueue.unlock();
 
-                            writer.println("login successfully " + token.getToken());
+                            writer.println("login successfully " + token.get_identifier());
 
                             break;
                         } else {
@@ -104,13 +80,13 @@ public class AuthenticationThread extends Thread {
                         String username = message.split(" ")[1];
                         String password = message.split(" ")[2];
 
-                        Player player = Registration.registerUser(username, password);
+                        Player player = DatabaseManager.register(username, password);
                         if (player != null) {
-                            TokenWithExpiration token = Authentication.generateToken(username, 1);
+                            Token token = DatabaseManager.generateToken(1000);
 
                             player.setToken(token);
 
-                            player.login();
+                            player.setLoggedIn(true);
                             player.setSocket(socket);
                             player.setChannel(socketChannel);
 
@@ -118,7 +94,7 @@ public class AuthenticationThread extends Thread {
                             Server.playersQueue.add(player);
                             Server.lockPlayersQueue.unlock();
 
-                            writer.println("registration successfully " + token.getToken());
+                            writer.println("registration successfully " + token.get_identifier());
 
                             break;
 

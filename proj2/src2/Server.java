@@ -5,7 +5,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,7 +13,7 @@ public class Server {
     protected static int port;
     private static int poolsize = 2;
     protected static ExecutorService executor;
-    protected static Map<String, Player> users = new HashMap<>();
+    protected static List<Player> players;
     protected static ReentrantLock lockDB = new ReentrantLock();
     protected static ReentrantLock lockPlayersQueue = new ReentrantLock();
     protected static Queue<Player> playersQueue;
@@ -26,7 +25,7 @@ public class Server {
         port = Integer.parseInt(args[0]);
 
         //ler o ficheiro e guardar no map
-        users = Registration.readUserFile();
+        players = DatabaseManager.getPlayers();
         executor = Executors.newFixedThreadPool(poolsize);
 
         //SOUT PERGUNTAR O MODO DE JOGO
@@ -42,7 +41,7 @@ public class Server {
                 mode = 1;
                 break;
             case "2":
-                playersQueue = new PriorityQueue<>(Comparator.comparing(Player::getRank));
+                playersQueue = new LinkedList<>(); // NOT IMPLEMENTED
                 mode = 2;
                 break;
             default:
@@ -61,20 +60,17 @@ public class Server {
             // Start a separate thread to handle the number of players in the queue
             Thread queueThread = new Thread(new QueueHandler());
             queueThread.start();
-
+            
             while (true) {
                 System.out.println("Players:");
-                for (Player player : users.values()) {
+                for (Player player : players) {
                     System.out.println("player: " + player.getUsername() + " | " + player.getLoggedIn());
                 }
 
                 SocketChannel clientChannel = serverSocketChannel.accept();
                 Socket clientSocket = clientChannel.socket();
 
-
-                AuthenticationThread thread = new AuthenticationThread(clientSocket, clientChannel, queueThread);
-                System.out.println("Starting new Thread");
-                thread.start();
+                Thread.ofVirtual().start(new AuthenticationThread(clientSocket, clientChannel, queueThread));
 
             }
 
@@ -82,6 +78,15 @@ public class Server {
             System.out.println("Server exception: " + ex.getMessage());
             ex.printStackTrace();
         }
+    }
+
+    public static Player getPlayer(String username) {
+        for (Player player : players) {
+            if (player.getUsername().equals(username)) {
+                return player;
+            }
+        }
+        return null;
     }
 
 }
