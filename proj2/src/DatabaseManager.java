@@ -157,4 +157,47 @@ public class DatabaseManager {
     public static String hashPassword(String password) {
         return Integer.toString(password.hashCode());
     }
+
+
+    public boolean updateHighScore(String username, int newHighScore) {
+        for (Player player : players) {
+            if (player.getUsername().equals(username)) {
+                if (newHighScore > player.getHighScore()) {
+                    player.setHighScore(newHighScore);
+                    updateDatabaseFile();
+                    return true;
+                }
+                return false; 
+            }
+        }
+        return false; // Player not found
+    }
+
+    private void updateDatabaseFile() {
+        try (FileWriter writer = new FileWriter(path.toString())) {
+            for (Player player : players) {
+                String playerData = player.getUsername() + "," + player.getPasswordHash() + "," + player.getHighScore() + "\n";
+                writer.write(playerData);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getLeaderboard() {
+        StringBuilder leaderboard = new StringBuilder();
+        players.sort(Comparator.comparing(Player::getHighScore).reversed());
+
+        for (int i = 0; i < players.size(); i++) {
+            Player player = players.get(i);
+            leaderboard.append((i + 1)).append(". ")
+                        .append(player.getUsername())
+                        .append(": ")
+                        .append(player.getHighScore())
+                        .append("\n");
+        }
+        return leaderboard.toString();
+    }
+
+
 }

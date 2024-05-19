@@ -12,17 +12,19 @@ public class MathClient {
         String hostname = args[0];
         int port = Integer.parseInt(args[1]);
         BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
+        DatabaseManager dbManager = new DatabaseManager();
 
         while (true) {
             System.out.println("\nMenu:");
             System.out.println("1. Login");
             System.out.println("2. Register");
-            System.out.println("3. Exit");
+            System.out.println("3. Leaderboard");
+            System.out.println("4. Exit");
             System.out.print("Enter your choice: ");
 
             try {
                 String choice = userInputReader.readLine();
-                if ("3".equals(choice)) {
+                if ("4".equals(choice)) {
                     System.out.println("Exiting client.");
                     break;
                 } else if ("1".equals(choice)) {
@@ -39,7 +41,12 @@ public class MathClient {
                     String password = userInputReader.readLine();
 
                     registerAndPlay(hostname, port, username, password, userInputReader);
-                } else {
+                } else if("3".equals(choice)){
+                    String leaderboard = dbManager.getLeaderboard();
+                    System.out.println(leaderboard);
+
+                }
+                else {
                     System.out.println("Invalid option. Please try again.");
                 }
             } catch (IOException e) {

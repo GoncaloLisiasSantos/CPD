@@ -47,17 +47,17 @@ public class MathServer {
     private static void generateExpressions() {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            int num1 = random.nextInt(10) + 1;
-            int num2 = random.nextInt(10) + 1;
-            int num3 = random.nextInt(10) + 1;
+            int num1 = random.nextInt(20) + 1;
+            int num2 = random.nextInt(20) + 1;
+            int num3 = random.nextInt(20) + 1;
 
             String expression;
             if (random.nextBoolean()) {
-                String[] operators = { "+", "-", "*", "/" };
+                String[] operators = { "+", "-" };
                 String operator = operators[random.nextInt(operators.length)];
                 expression = num1 + " " + operator + " " + num2;
             } else {
-                String[] operators = { "+", "-", "*" };
+                String[] operators = { "+", "-" };
                 String operator1 = operators[random.nextInt(operators.length)];
                 String operator2 = operators[random.nextInt(operators.length)];
                 expression = num1 + " " + operator1 + " " + num2 + " " + operator2 + " " + num3;
@@ -81,13 +81,6 @@ public class MathServer {
                     break;
                 case "-":
                     result -= nextOperand;
-                    break;
-                case "*":
-                    result *= nextOperand;
-                    break;
-                case "/":
-                    if (nextOperand != 0)
-                        result /= nextOperand;
                     break;
             }
         }
@@ -119,34 +112,54 @@ public class MathServer {
 
             int score1 = 0;
             int score2 = 0;
+            int index = 0;
             String inputLine;
 
-            for (int i = 0; i < expressions.size(); i++) {
+            while (index < expressions.size()) {
+                // Player 1's turn
                 if ((inputLine = in1.readLine()) != null) {
                     try {
                         int answer = Integer.parseInt(inputLine.trim());
-                        if (answer == results.get(i)) {
-                            score1 += 2;
+                        int correctAnswer = results.get(index);
+                        int dif = Math.abs(correctAnswer - answer);
+                        if (answer == correctAnswer) {
+                            score1 += 10;
+                        } else if (dif <= correctAnswer / 10) {
+                            score1 += 10 - dif;
                         }
+                        //out1.println("Current score: " + score1);
                     } catch (NumberFormatException e) {
                         out1.println("Please enter a valid number.");
+                        continue; // Prompt player 1 again for the same question
                     }
                 }
 
+                // Player 2's turn
                 if ((inputLine = in2.readLine()) != null) {
                     try {
                         int answer = Integer.parseInt(inputLine.trim());
-                        if (answer == results.get(i)) {
-                            score2 += 2;
+                        int correctAnswer = results.get(index);
+                        int dif = Math.abs(correctAnswer - answer);
+                        if (answer == correctAnswer) {
+                            score2 += 10;
+                        } else if (dif <= correctAnswer / 10) {
+                            score2 += 10 - dif;
                         }
+                        //out2.println("Current score: " + score2);
                     } catch (NumberFormatException e) {
                         out2.println("Please enter a valid number.");
+                        continue; // Prompt player 2 again for the same question
                     }
                 }
+
+                index++; // Increment index only after both players have answered the current question
             }
 
-            out1.println("Your score: " + score1);
-            out2.println("Your score: " + score2);
+            out1.println("Final score: " + score1);
+            out2.println("Final score: " + score2);
+
+            dbManager.updateHighScore(player1, score1);
+            dbManager.updateHighScore(player2, score2);
 
             socket1.close();
             socket2.close();
