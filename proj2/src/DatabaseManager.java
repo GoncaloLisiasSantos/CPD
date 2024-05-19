@@ -64,6 +64,7 @@ public class DatabaseManager {
                     Token player_token = player.getToken();
                     if (player_token == null || player_token.isExpired()) {
                         player_token = generateToken(1800); // Generate a new token with 30 minutes expiry
+                        tokenFile(username, player_token.get_identifier());
                         player.setToken(player_token);
                     }
                     player.setLoggedIn(true);
@@ -117,7 +118,23 @@ public class DatabaseManager {
     }
 
     public static void tokenFile(String username, String token) {
-        try (FileWriter writer = new FileWriter("token" + username + ".txt")) {
+
+        // Diretório onde os arquivos de token serão armazenados
+        String directoryPath = "Tokens";
+        
+        // Verifica se o diretório existe, senão cria
+        Path directory = Paths.get(directoryPath);
+        if (!Files.exists(directory)) {
+            try {
+                Files.createDirectories(directory);
+            } catch (IOException e) {
+                System.out.println("Failed to create directory: " + directoryPath);
+                e.printStackTrace();
+                return;
+            }
+        }
+        
+        try (FileWriter writer = new FileWriter(directoryPath +"/token_" + username + ".txt")) {
             writer.write(token);
         } catch (IOException e) {
             System.out.println("An error occurred.");

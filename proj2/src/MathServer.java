@@ -139,27 +139,40 @@ public class MathServer {
             }
         }
 
-        private void playGame(PrintWriter out, BufferedReader in) throws IOException {
-            for (int i = 0; i < expressions.size(); i++) {
-                out.println("Question " + (i + 1) + ": " + expressions.get(i));
-
-                // Send the expression to the client and receive the response
-                out.println("ANSWER");
-                String clientResponse = in.readLine();
-
-                try {
-                    int clientResult = Integer.parseInt(clientResponse);
-                    if (clientResult == results.get(i)) {
-                        out.println("CORRECT");
-                    } else {
-                        out.println("WRONG");
-                    }
-                } catch (NumberFormatException e)
-                {
-                    out.println("INVALID_RESPONSE");
+         private void playGame(PrintWriter out, BufferedReader in) throws IOException {
+            // Clear previous expressions and results
+            expressions.clear();
+            results.clear();
+    
+            // Generate new expressions for this session
+            generateExpressions();
+            try {
+                for (int i = 0; i < expressions.size(); i++) {
+                    out.println("Question " + (i + 1) + ": " + expressions.get(i));
                 }
+                out.println("END_OF_QUESTIONS");
+
+                String inputLine;
+                int score = 0;
+                int index = 0;
+                while ((inputLine = in.readLine()) != null) {
+                    try {
+                        int answer = Integer.parseInt(inputLine.trim());
+                        if (answer == results.get(index)) {
+                            score += 2;
+                        }
+                        index++;
+                        if (index >= expressions.size())
+                            break;
+                    } catch (NumberFormatException e) {
+                        out.println("Please enter a valid number.");
+                    }
+                }
+
+                out.println("Your score: " + score);
+            } finally {
+                socket.close(); // Close the connection after the game
             }
-            out.println("GAME_OVER");
         }
     }
 }
